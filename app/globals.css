@@ -1,0 +1,214 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-brand-purple: var(--brand-purple);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-cyan: var(--brand-cyan);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+}
+
+:root {
+  color-scheme: dark;
+
+  /* Deep navy/black base */
+  --background: oklch(0.13 0.03 275);
+  --foreground: oklch(0.97 0.01 275);
+
+  --card: oklch(0.18 0.035 275);
+  --card-foreground: oklch(0.97 0.01 275);
+  --popover: oklch(0.16 0.035 275);
+  --popover-foreground: oklch(0.97 0.01 275);
+
+  /* Neon blue primary */
+  --primary: oklch(0.62 0.2 265);
+  --primary-foreground: oklch(0.98 0.01 275);
+
+  --secondary: oklch(0.24 0.04 275);
+  --secondary-foreground: oklch(0.97 0.01 275);
+
+  --muted: oklch(0.22 0.035 275);
+  --muted-foreground: oklch(0.72 0.03 275);
+
+  --accent: oklch(0.62 0.24 300);
+  --accent-foreground: oklch(0.98 0.01 275);
+
+  --destructive: oklch(0.62 0.22 25);
+
+  --border: oklch(0.98 0.02 275 / 12%);
+  --input: oklch(0.98 0.02 275 / 15%);
+  --ring: oklch(0.62 0.2 265);
+
+  --radius: 0.9rem;
+
+  /* Brand gradient stops */
+  --brand-purple: oklch(0.62 0.24 300);
+  --brand-blue: oklch(0.62 0.2 265);
+  --brand-cyan: oklch(0.75 0.15 220);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    background-image: linear-gradient(
+      100deg,
+      oklch(0.75 0.15 220),
+      oklch(0.62 0.2 265),
+      oklch(0.65 0.24 300)
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Glass with real depth: ambient shadow + directional shadow + inset top highlight + inset bottom shade */
+  .glass {
+    background: linear-gradient(
+      165deg,
+      color-mix(in oklch, var(--card) 68%, transparent),
+      color-mix(in oklch, var(--card) 42%, transparent)
+    );
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    border: 1px solid oklch(0.98 0.02 275 / 12%);
+    box-shadow:
+      0 1px 0 0 oklch(1 0 0 / 8%) inset,
+      0 -1px 0 0 oklch(0 0 0 / 20%) inset,
+      0 24px 48px -20px oklch(0.05 0.02 275 / 65%),
+      0 4px 12px -4px oklch(0.05 0.02 275 / 40%);
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.35s ease;
+  }
+
+  .glass-strong {
+    background: linear-gradient(
+      165deg,
+      color-mix(in oklch, var(--card) 88%, transparent),
+      color-mix(in oklch, var(--card) 62%, transparent)
+    );
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    border: 1px solid oklch(0.98 0.02 275 / 16%);
+    box-shadow:
+      0 1px 0 0 oklch(1 0 0 / 10%) inset,
+      0 -1px 0 0 oklch(0 0 0 / 25%) inset,
+      0 32px 64px -24px oklch(0.05 0.02 275 / 75%),
+      0 8px 16px -6px oklch(0.05 0.02 275 / 45%);
+  }
+
+  /* Elevate on hover for interactive glass cards — real perceived lift, not just a color change */
+  .glass-hover {
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.35s ease;
+  }
+  .glass-hover:hover {
+    transform: translateY(-6px);
+    border-color: oklch(0.98 0.02 275 / 22%);
+    box-shadow:
+      0 1px 0 0 oklch(1 0 0 / 12%) inset,
+      0 -1px 0 0 oklch(0 0 0 / 20%) inset,
+      0 40px 70px -20px oklch(0.05 0.02 275 / 80%),
+      0 0 0 1px oklch(0.62 0.2 265 / 25%),
+      0 12px 32px -8px oklch(0.62 0.2 265 / 30%);
+  }
+
+  .brand-gradient {
+    background-image: linear-gradient(
+      100deg,
+      oklch(0.62 0.2 265),
+      oklch(0.65 0.24 300)
+    );
+    box-shadow:
+      0 1px 0 0 oklch(1 0 0 / 25%) inset,
+      0 12px 24px -8px oklch(0.62 0.2 265 / 55%);
+  }
+
+  .glow-ring {
+    box-shadow: 0 0 0 1px oklch(0.62 0.2 265 / 30%),
+      0 8px 40px -8px oklch(0.62 0.2 265 / 45%);
+  }
+
+  /* Subtle film-grain noise overlay to break flatness on large gradient/blur surfaces */
+  .grain-overlay {
+    position: relative;
+  }
+  .grain-overlay::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.035;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+}
+
+@keyframes float-orb {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -40px) scale(1.08);
+  }
+  66% {
+    transform: translate(-20px, 30px) scale(0.95);
+  }
+}
+
+.animate-float-orb {
+  animation: float-orb 18s ease-in-out infinite;
+}
+
+@keyframes marquee-x {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
