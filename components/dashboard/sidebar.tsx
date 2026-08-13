@@ -9,6 +9,7 @@ import {
   FileText,
   LayoutDashboard,
   Map,
+  MessageCircle,
   MessagesSquare,
   Mic,
   Radar,
@@ -21,6 +22,7 @@ import { cn } from '@/lib/utils'
 
 const navItems = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { label: 'AI Mentor Chat', href: '/ai-mentor', icon: MessageCircle },
   { label: 'AI Planner', href: '/ai-planner', icon: Sparkles },
   { label: 'Skill Analyzer', href: '/skill-analyzer', icon: Radar },
   { label: 'Career Roadmap', href: '/roadmap', icon: Map },

@@ -3,6 +3,7 @@ import { verifySession, SESSION_COOKIE } from '@/lib/auth'
 
 const PROTECTED_ROUTES = [
   '/dashboard',
+  '/ai-mentor',
   '/ai-planner',
   '/skill-analyzer',
   '/roadmap',
@@ -42,6 +43,7 @@ export async function proxy(req: NextRequest) {
 export const config = {
   matcher: [
     '/dashboard/:path*',
+    '/ai-mentor/:path*',
     '/ai-planner/:path*',
     '/skill-analyzer/:path*',
     '/roadmap/:path*',
