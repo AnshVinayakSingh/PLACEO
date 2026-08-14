@@ -1,8 +1,10 @@
 'use client'
 
-import { motion } from 'motion/react'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'motion/react'
 import { AlertTriangle, PlayCircle, TrendingUp } from 'lucide-react'
 import { PageShell } from '@/components/dashboard/page-shell'
+import { QuizPanel } from '@/components/skill-analyzer/quiz-panel'
 
 const skills = [
   { name: 'DSA', mastery: 78, trend: '+5%', weak: 'Graphs & DP' },
@@ -21,6 +23,8 @@ function ringColor(v: number) {
 }
 
 export default function SkillAnalyzerPage() {
+  const [activeSkill, setActiveSkill] = useState<string | null>(null)
+
   return (
     <PageShell
       title="AI Skill Mastery Analyzer"
@@ -66,13 +70,20 @@ export default function SkillAnalyzerPage() {
               Weak topic: {s.weak}
             </div>
 
-            <button className="glass mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium transition-colors hover:bg-white/5">
+            <button
+              onClick={() => setActiveSkill(s.name)}
+              className="glass mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium transition-colors hover:bg-white/5"
+            >
               <PlayCircle className="size-4 text-brand-cyan" />
               Start Assessment
             </button>
           </motion.div>
         ))}
       </div>
+
+      <AnimatePresence>
+        {activeSkill && <QuizPanel topic={activeSkill} onClose={() => setActiveSkill(null)} />}
+      </AnimatePresence>
     </PageShell>
   )
 }
