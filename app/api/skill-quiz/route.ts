@@ -83,6 +83,15 @@ Rules:
     if (!res.ok) {
       const errText = await res.text()
       console.error('Gemini quiz API error:', res.status, errText)
+      if (res.status === 429) {
+        return NextResponse.json(
+          {
+            error:
+              "Today's free question-generation limit has been reached. This resets automatically — try again in a few minutes, or later today.",
+          },
+          { status: 429 },
+        )
+      }
       return NextResponse.json(
         { error: 'Could not generate questions right now. Please try again.' },
         { status: 502 },

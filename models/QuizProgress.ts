@@ -1,13 +1,29 @@
 import { Schema, models, model } from 'mongoose'
 
+export interface ISubtopicStat {
+  subtopic: string
+  correct: number
+  total: number
+}
+
 export interface IQuizProgress {
   userId: string
   skill: string
-  levelIndex: number // index into that skill's curriculum — the user's current "level"
+  levelIndex: number // furthest index reached in that skill's curriculum — used for "Continue"
   questionsAnswered: number
   correctAnswered: number
+  subtopicStats: ISubtopicStat[]
   updatedAt: Date
 }
+
+const SubtopicStatSchema = new Schema<ISubtopicStat>(
+  {
+    subtopic: { type: String, required: true },
+    correct: { type: Number, default: 0 },
+    total: { type: Number, default: 0 },
+  },
+  { _id: false },
+)
 
 const QuizProgressSchema = new Schema<IQuizProgress>(
   {
@@ -16,6 +32,7 @@ const QuizProgressSchema = new Schema<IQuizProgress>(
     levelIndex: { type: Number, default: 0 },
     questionsAnswered: { type: Number, default: 0 },
     correctAnswered: { type: Number, default: 0 },
+    subtopicStats: { type: [SubtopicStatSchema], default: [] },
   },
   { timestamps: { createdAt: false, updatedAt: true } },
 )

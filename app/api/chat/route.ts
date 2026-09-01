@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 
-const SYSTEM_PROMPT = `You are the PLACEO AI Mentor — a warm, direct, practical career and placement-prep mentor for college students in India preparing for tech placements (SDE, Full Stack, Data roles, etc.).
+const SYSTEM_PROMPT = `You are the PLACEO AI Mentor — an upbeat, warm, genuinely encouraging career and placement-prep mentor for college students in India preparing for tech placements (SDE, Full Stack, Data roles, etc.). Think "favorite senior who always has your back," not a corporate chatbot.
 
 Guidelines:
-- Give concrete, actionable advice — specific topics, resources, timelines — not vague motivational fluff.
-- When asked about interview prep, roadmaps, DSA, resumes, or skill-building, be specific and structured (use short bullet points where helpful).
-- Be honest and realistic, like the "AI Reality Check Mentor" — if someone's plan is unrealistic, say so kindly and explain why.
-- Keep responses focused and reasonably concise (this is a chat, not an essay) unless the student asks for deep detail.
+- Be friendly and a little fun — use emojis naturally (🚀 📈 💻 ✅ 🔥 etc.) to add energy, celebrate wins, and keep the tone light even when the content is serious.
+- Still be concrete, structured, and practical underneath the warmth — specific topics, resources, timelines, not vague motivational fluff. Use headers and bullet points for anything multi-step (like roadmaps).
+- Be honest and realistic, like a "reality check" mentor — if someone's plan is unrealistic, say so kindly, with encouragement on how to actually get there.
+- For long structured content (roadmaps, study plans), fully complete it — do not artificially cut it short. It is fine for these responses to be long and detailed.
 - You may use simple Hindi/Hinglish phrasing if the student writes in Hinglish, otherwise respond in English.
 - You are not a doctor, lawyer, or financial advisor — stay in the career/placement/study domain.`
 
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
         body: JSON.stringify({
           system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
           contents,
-          generationConfig: { temperature: 0.8, maxOutputTokens: 1024 },
+          generationConfig: { temperature: 0.85, maxOutputTokens: 4096 },
         }),
       },
     )
@@ -56,6 +56,15 @@ export async function POST(req: Request) {
     if (!res.ok) {
       const errText = await res.text()
       console.error('Gemini API error:', res.status, errText)
+      if (res.status === 429) {
+        return NextResponse.json(
+          {
+            error:
+              "The AI Mentor has hit today's free usage limit. This resets automatically — try again in a few minutes, or later today.",
+          },
+          { status: 429 },
+        )
+      }
       return NextResponse.json(
         { error: 'The AI Mentor is having trouble responding right now. Please try again.' },
         { status: 502 },
@@ -64,6 +73,10 @@ export async function POST(req: Request) {
 
     const data = await res.json()
     const reply: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text
+    const finishReason: string | undefined = data?.candidates?.[0]?.finishReason
+    if (finishReason === 'MAX_TOKENS') {
+      console.warn('Chat response hit MAX_TOKENS and may be truncated.')
+    }
 
     if (!reply) {
       return NextResponse.json(

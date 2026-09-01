@@ -214,3 +214,19 @@
     transform: translateX(-50%);
   }
 }
+
+/* Lenis smooth-scroll: recommended base rules so nested scrollable
+   elements (chat windows, dropdowns, etc.) behave correctly. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
