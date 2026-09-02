@@ -105,6 +105,19 @@
     color: transparent;
   }
 
+  /* Native <select> dropdowns don't inherit .glass's transparent gradient background —
+     browsers render the popup list using an explicit background-color, so without this
+     it falls back to a stark white/light popup regardless of the app's dark theme. */
+  select {
+    color-scheme: dark;
+    background-color: var(--card);
+    color: var(--foreground);
+  }
+  select option {
+    background-color: var(--card);
+    color: var(--foreground);
+  }
+
   /* Glass with real depth: ambient shadow + directional shadow + inset top highlight + inset bottom shade */
   .glass {
     background: linear-gradient(

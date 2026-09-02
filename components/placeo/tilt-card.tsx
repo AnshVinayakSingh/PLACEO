@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, type ReactNode } from 'react'
+import { useRef, type MouseEvent, type ReactNode } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'motion/react'
 
 type TiltCardProps = {
@@ -22,7 +22,7 @@ export function TiltCard({ children, className }: TiltCardProps) {
     damping: 20,
   })
 
-  function handleMove(e: React.MouseEvent<HTMLDivElement>) {
+  function handleMove(e: MouseEvent<HTMLDivElement>) {
     const el = ref.current
     if (!el) return
     const rect = el.getBoundingClientRect()

@@ -530,15 +530,16 @@ export default function AiPlannerPage() {
                 <select
                   value={sessionLength}
                   onChange={(e) => setSessionLength(Number(e.target.value))}
-                  className="glass h-9 w-full rounded-lg px-3 text-sm outline-none"
+                  style={{ colorScheme: 'dark' }}
+                  className="glass h-9 w-full rounded-lg bg-background px-3 text-sm text-foreground outline-none"
                 >
-                  <option value={30}>30 minutes</option>
-                  <option value={45}>45 minutes</option>
-                  <option value={60}>1 hour</option>
-                  <option value={90}>1.5 hours</option>
-                  <option value={120}>2 hours</option>
-                  <option value={150}>2.5 hours</option>
-                  <option value={180}>3 hours</option>
+                  <option value={30} className="bg-background text-foreground">30 minutes</option>
+                  <option value={45} className="bg-background text-foreground">45 minutes</option>
+                  <option value={60} className="bg-background text-foreground">1 hour</option>
+                  <option value={90} className="bg-background text-foreground">1.5 hours</option>
+                  <option value={120} className="bg-background text-foreground">2 hours</option>
+                  <option value={150} className="bg-background text-foreground">2.5 hours</option>
+                  <option value={180} className="bg-background text-foreground">3 hours</option>
                 </select>
               </div>
 

@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { motion } from 'motion/react'
-import { AlertCircle, Bell, Camera, Check, Loader2, Save, Shield, User } from 'lucide-react'
+import { AlertCircle, ArrowLeft, Bell, Camera, Check, Loader2, Save, Shield, User } from 'lucide-react'
 import { PageShell } from '@/components/dashboard/page-shell'
 import { cn } from '@/lib/utils'
 import { fileToCompressedDataUrl } from '@/lib/image'
@@ -46,7 +47,7 @@ export default function SettingsPage() {
     setProfile((p) => (p ? { ...p, [key]: value } : p))
   }
 
-  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleAvatarChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) {
@@ -89,7 +90,19 @@ export default function SettingsPage() {
   }
 
   return (
-    <PageShell title="Settings" description="Manage your account, notifications, and security.">
+    <PageShell
+      title="Settings"
+      description="Manage your account, notifications, and security."
+      headerAction={
+        <Link
+          href="/profile"
+          className="glass flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-3.5" />
+          Back to Profile
+        </Link>
+      }
+    >
       <div className="glass overflow-hidden rounded-2xl">
         <div className="flex overflow-x-auto border-b border-border">
           {tabs.map((t) => {
@@ -282,20 +295,29 @@ export default function SettingsPage() {
               )}
 
               {tab === 'profile' && (
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="brand-gradient glow-ring mt-6 flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60"
-                >
-                  {saving ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : saved ? (
-                    <Check className="size-4" />
-                  ) : (
-                    <Save className="size-4" />
-                  )}
-                  {saved ? 'Saved' : 'Save Changes'}
-                </button>
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="brand-gradient glow-ring flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60"
+                  >
+                    {saving ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : saved ? (
+                      <Check className="size-4" />
+                    ) : (
+                      <Save className="size-4" />
+                    )}
+                    {saved ? 'Saved' : 'Save Changes'}
+                  </button>
+                  <Link
+                    href="/profile"
+                    className="glass flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    <ArrowLeft className="size-4" />
+                    Back to Profile
+                  </Link>
+                </div>
               )}
             </>
           )}
