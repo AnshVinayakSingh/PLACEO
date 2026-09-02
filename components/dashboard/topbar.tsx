@@ -11,7 +11,6 @@ import {
   LogOut,
   Menu,
   PanelLeft,
-  Search,
   Settings,
   User,
 } from 'lucide-react'
@@ -66,16 +65,6 @@ export function Topbar({ onToggleSidebar, onOpenMobile }: TopbarProps) {
       >
         <PanelLeft className="size-5" />
       </button>
-
-      {/* Search */}
-      <div className="relative flex-1 max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          type="search"
-          placeholder="Search skills, mocks, roadmaps..."
-          className="glass h-10 w-full rounded-xl pl-9 pr-4 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-ring/60"
-        />
-      </div>
 
       <div className="ml-auto flex items-center gap-2">
         {/* Notifications */}

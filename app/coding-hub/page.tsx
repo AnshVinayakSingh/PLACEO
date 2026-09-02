@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { motion } from 'motion/react'
 import {
   ArrowLeft,
@@ -25,6 +25,7 @@ type Question = {
   link: string
   platform: string
   tags: string[]
+  topic: string
   frequency: number
   alsoAskedAt: string[]
 }
@@ -45,20 +46,25 @@ const DIFFICULTY_STYLES: Record<Difficulty, string> = {
   HARD: 'border-rose-400/30 bg-rose-400/10 text-rose-300',
 }
 
+/** Groups already-frequency-sorted questions by topic, topics sorted by question count (most first). */
+function groupByTopic(questions: Question[]): [string, Question[]][] {
+  const map = new Map<string, Question[]>()
+  for (const q of questions) {
+    const list = map.get(q.topic) ?? []
+    list.push(q)
+    map.set(q.topic, list)
+  }
+  return Array.from(map.entries()).sort((a, b) => b[1].length - a[1].length)
+}
+
 // ---------- Main page ----------
 
 export default function CodingHubPage() {
-  const [query, setQuery] = useState('')
   const [customCompany, setCustomCompany] = useState('')
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<QuestionsResponse | null>(null)
   const [error, setError] = useState('')
-
-  const filteredPresets = useMemo(
-    () => PRESET_COMPANIES.filter((c) => c.name.toLowerCase().includes(query.toLowerCase())),
-    [query],
-  )
 
   async function openCompany(name: string) {
     const trimmed = name.trim()
@@ -139,56 +145,68 @@ export default function CodingHubPage() {
 
         {!loading && result && result.found && (
           <>
-            <p className="mb-3 text-xs text-muted-foreground">
-              {result.total} question{result.total === 1 ? '' : 's'} found · click any question to open it on its
-              trusted source platform
+            <p className="mb-4 text-xs text-muted-foreground">
+              {result.total} question{result.total === 1 ? '' : 's'} found, grouped by topic · click any question to
+              open it on its trusted source platform
             </p>
-            <div className="space-y-2">
-              {result.questions.map((q, i) => (
-                <motion.a
-                  key={q.slug}
-                  href={q.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2, delay: Math.min(i * 0.015, 0.4) }}
-                  className="glass group flex flex-col gap-1.5 rounded-xl p-4 transition-colors hover:bg-white/5"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="flex items-center gap-2 text-sm font-medium group-hover:text-brand-cyan">
-                      {q.title}
-                      <ExternalLink className="size-3.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+            <div className="space-y-8">
+              {groupByTopic(result.questions).map(([topic, questions]) => (
+                <div key={topic}>
+                  <h3 className="font-display mb-3 flex items-center gap-2 text-sm font-semibold">
+                    {topic}
+                    <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-normal text-muted-foreground">
+                      {questions.length}
                     </span>
-                    <span
-                      className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${DIFFICULTY_STYLES[q.difficulty]}`}
-                    >
-                      {q.difficulty}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">
-                      {q.platform}
-                    </span>
-                    {q.tags.slice(0, 4).map((t) => (
-                      <span
-                        key={t}
-                        className="flex items-center gap-1 rounded-full bg-white/[0.03] px-2 py-0.5 text-[10px] text-muted-foreground"
+                  </h3>
+                  <div className="space-y-2">
+                    {questions.map((q, i) => (
+                      <motion.a
+                        key={q.slug}
+                        href={q.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2, delay: Math.min(i * 0.015, 0.3) }}
+                        className="glass group flex flex-col gap-1.5 rounded-xl p-4 transition-colors hover:bg-white/5"
                       >
-                        <Tag className="size-2.5" />
-                        {t}
-                      </span>
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="flex items-center gap-2 text-sm font-medium group-hover:text-brand-cyan">
+                            {q.title}
+                            <ExternalLink className="size-3.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+                          </span>
+                          <span
+                            className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${DIFFICULTY_STYLES[q.difficulty]}`}
+                          >
+                            {q.difficulty}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">
+                            {q.platform}
+                          </span>
+                          {q.tags.slice(0, 4).map((t) => (
+                            <span
+                              key={t}
+                              className="flex items-center gap-1 rounded-full bg-white/[0.03] px-2 py-0.5 text-[10px] text-muted-foreground"
+                            >
+                              <Tag className="size-2.5" />
+                              {t}
+                            </span>
+                          ))}
+                        </div>
+
+                        {q.alsoAskedAt.length > 0 && (
+                          <p className="text-[11px] text-muted-foreground">
+                            Also asked at:{' '}
+                            <span className="text-brand-cyan/80">{q.alsoAskedAt.join(', ')}</span>
+                          </p>
+                        )}
+                      </motion.a>
                     ))}
                   </div>
-
-                  {q.alsoAskedAt.length > 0 && (
-                    <p className="text-[11px] text-muted-foreground">
-                      Also asked at:{' '}
-                      <span className="text-brand-cyan/80">{q.alsoAskedAt.join(', ')}</span>
-                    </p>
-                  )}
-                </motion.a>
+                </div>
               ))}
             </div>
           </>
@@ -204,18 +222,6 @@ export default function CodingHubPage() {
       title="Company-wise Coding Questions Hub"
       description="Pick a company or search for any company name to get its real, frequency-sorted DSA question list — each question opens directly on LeetCode (or another trusted platform)."
     >
-      <div className="glass mb-4 flex flex-col gap-3 rounded-2xl p-4 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Filter the list below..."
-            className="glass h-10 w-full rounded-xl pl-9 pr-4 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-ring/60"
-          />
-        </div>
-      </div>
-
       {/* Custom company search */}
       <form
         onSubmit={onCustomSearchSubmit}
@@ -239,7 +245,7 @@ export default function CodingHubPage() {
       </form>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {filteredPresets.map((c, i) => (
+        {PRESET_COMPANIES.map((c, i) => (
           <motion.button
             key={c.name}
             onClick={() => openCompany(c.name)}
@@ -260,12 +266,6 @@ export default function CodingHubPage() {
           </motion.button>
         ))}
       </div>
-
-      {filteredPresets.length === 0 && (
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          No preset match for &quot;{query}&quot; — try the search box above to look it up directly.
-        </p>
-      )}
     </PageShell>
   )
 }

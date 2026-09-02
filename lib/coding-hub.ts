@@ -19,8 +19,44 @@ export type CodingHubQuestion = {
   link: string
   platform: string
   tags: string[]
+  topic: string
   frequency: number
   alsoAskedAt: string[]
+}
+
+// A rough priority order so, say, "Dynamic Programming" wins over "Array" when
+// a question has both tags — the more specific/interesting topic bucket shows up.
+const TOPIC_PRIORITY = [
+  'Dynamic Programming',
+  'Backtracking',
+  'Graph',
+  'Tree',
+  'Binary Search Tree',
+  'Trie',
+  'Union Find',
+  'Heap (Priority Queue)',
+  'Binary Search',
+  'Greedy',
+  'Sliding Window',
+  'Two Pointers',
+  'Linked List',
+  'Stack',
+  'Queue',
+  'Bit Manipulation',
+  'Math',
+  'Sorting',
+  'Hash Table',
+  'String',
+  'Matrix',
+  'Array',
+]
+
+function primaryTopic(tags: string[]): string {
+  if (tags.length === 0) return 'Other'
+  for (const preferred of TOPIC_PRIORITY) {
+    if (tags.includes(preferred)) return preferred
+  }
+  return tags[0]
 }
 
 export function slugify(title: string): string {
@@ -219,6 +255,7 @@ export async function getCompanyQuestions(
     link: q.link,
     platform: q.platform,
     tags: q.tags,
+    topic: primaryTopic(q.tags),
     frequency: q.frequency,
     alsoAskedAt: alsoAskedMap.get(q.slug) || [],
   }))
