@@ -58,8 +58,7 @@ export function DashboardShell() {
                 Welcome back, <span className="text-gradient">{firstName}</span>
               </h1>
               <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-                You&apos;re in the top 8% of your cohort this week — one more mock interview keeps
-                the streak alive.
+                Here's where things stand — pick up where you left off.
               </p>
             </motion.div>
 

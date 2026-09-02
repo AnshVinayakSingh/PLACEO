@@ -181,7 +181,7 @@ export async function POST(req: Request) {
           contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
           generationConfig: {
             temperature: 0.6,
-            maxOutputTokens: 4096,
+            maxOutputTokens: 8192,
             responseMimeType: 'application/json',
             responseSchema,
           },
@@ -221,6 +221,13 @@ export async function POST(req: Request) {
 
     if (finishReason === 'MAX_TOKENS') {
       console.warn('AI Planner response hit MAX_TOKENS and may be truncated.')
+      return NextResponse.json(
+        {
+          error:
+            'Your plan was too detailed to generate in one go. Try a shorter max study session length, or fewer topics, and generate again.',
+        },
+        { status: 502 },
+      )
     }
 
     let plan: { weekday: unknown[]; weekend: unknown[]; insights: unknown[] }

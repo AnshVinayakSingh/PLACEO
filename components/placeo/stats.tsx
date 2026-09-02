@@ -10,10 +10,10 @@ type Stat = {
 }
 
 const stats: Stat[] = [
-  { value: 10000, suffix: '+', label: 'Students onboarded' },
-  { value: 95, suffix: '%', label: 'Placement success rate' },
-  { value: 500, suffix: '+', label: 'Hiring partners' },
-  { value: 1200000, suffix: '+', label: 'AI sessions run' },
+  { value: 10, suffix: '+', label: 'AI-powered tools' },
+  { value: 13, suffix: '+', label: 'DSA topics tracked' },
+  { value: 12, suffix: '+', label: 'Companies in Coding Hub' },
+  { value: 100, suffix: '%', label: 'Free to use' },
 ]
 
 function formatValue(n: number) {

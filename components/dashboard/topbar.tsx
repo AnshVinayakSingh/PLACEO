@@ -26,10 +26,10 @@ export function Topbar({ onToggleSidebar, onOpenMobile }: TopbarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null)
+  const [user, setUser] = useState<{ name: string; email: string; avatarUrl?: string } | null>(null)
 
   useEffect(() => {
-    fetch('/api/auth/me')
+    fetch('/api/profile')
       .then((res) => res.json())
       .then((data) => setUser(data.user))
       .catch(() => setUser(null))
@@ -97,13 +97,20 @@ export function Topbar({ onToggleSidebar, onOpenMobile }: TopbarProps) {
             aria-haspopup="menu"
             aria-expanded={menuOpen}
           >
-            <Image
-              src="/avatar-1.png"
-              alt="Your profile"
-              width={32}
-              height={32}
-              className="size-8 rounded-lg object-cover"
-            />
+            {user?.avatarUrl ? (
+              <Image
+                src={user.avatarUrl}
+                alt="Your profile"
+                width={32}
+                height={32}
+                className="size-8 rounded-lg object-cover"
+                unoptimized
+              />
+            ) : (
+              <span className="flex size-8 items-center justify-center rounded-lg bg-secondary text-xs font-semibold text-muted-foreground">
+                {user?.name?.[0]?.toUpperCase() ?? '?'}
+              </span>
+            )}
             <span className="hidden text-sm font-medium sm:block">
               {user ? user.name.split(' ')[0] : 'Student'}
             </span>

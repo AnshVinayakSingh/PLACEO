@@ -239,8 +239,8 @@ function BusySlotList({
 
 // ---------- Timeline output ----------
 
-function TimelineList({ blocks, topics }: { blocks: PlanBlock[]; topics: Topic[] }) {
-  if (!blocks.length) {
+function TimelineList({ blocks = [], topics }: { blocks?: PlanBlock[]; topics: Topic[] }) {
+  if (!blocks?.length) {
     return <p className="py-8 text-center text-sm text-muted-foreground">No plan yet.</p>
   }
   return (
@@ -537,6 +537,8 @@ export default function AiPlannerPage() {
                   <option value={60}>1 hour</option>
                   <option value={90}>1.5 hours</option>
                   <option value={120}>2 hours</option>
+                  <option value={150}>2.5 hours</option>
+                  <option value={180}>3 hours</option>
                 </select>
               </div>
 
@@ -624,7 +626,10 @@ export default function AiPlannerPage() {
                   </div>
 
                   <div data-lenis-prevent className="max-h-[560px] overflow-y-auto pr-1">
-                    <TimelineList blocks={activeTab === 'weekday' ? plan.weekday : plan.weekend} topics={topics} />
+                    <TimelineList
+                      blocks={(activeTab === 'weekday' ? plan.weekday : plan.weekend) ?? []}
+                      topics={topics}
+                    />
                   </div>
                 </div>
 

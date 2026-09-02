@@ -1,12 +1,13 @@
 'use client'
 
 import { AtSign, Code2, Play, Send, Sparkles } from 'lucide-react'
+import Link from 'next/link'
 import { Reveal } from './reveal'
 
 const columns = [
   {
     title: 'Product',
-    links: ['Features', 'Pricing', 'AI Roadmap', 'Interview Simulator'],
+    links: ['Features', 'AI Roadmap', 'Interview Simulator'],
   },
   {
     title: 'Company',
@@ -41,15 +42,14 @@ export function Footer() {
               <span className="text-gradient">autopilot?</span>
             </h2>
             <p className="mx-auto mt-3 max-w-md text-pretty text-muted-foreground">
-              Join 10,000+ students building their future with PLACEO. Start
-              free today.
+              Start building your AI-guided placement prep — free to use.
             </p>
-            <a
-              href="#pricing"
+            <Link
+              href="/signup"
               className="brand-gradient glow-ring mt-7 inline-flex rounded-xl px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-transform hover:scale-[1.03]"
             >
               Get Started Free
-            </a>
+            </Link>
           </div>
         </Reveal>
 

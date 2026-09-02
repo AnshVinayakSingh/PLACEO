@@ -3,7 +3,6 @@ import { Hero } from '@/components/placeo/hero'
 import { Features } from '@/components/placeo/features'
 import { Stats } from '@/components/placeo/stats'
 import { Testimonials } from '@/components/placeo/testimonials'
-import { Pricing } from '@/components/placeo/pricing'
 import { Faq } from '@/components/placeo/faq'
 import { Footer } from '@/components/placeo/footer'
 
@@ -16,7 +15,6 @@ export default function Page() {
         <Features />
         <Stats />
         <Testimonials />
-        <Pricing />
         <Faq />
       </main>
       <Footer />
