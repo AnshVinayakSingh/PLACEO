@@ -1,5 +1,3 @@
-const PDFJS_VERSION = '5.6.205'
-
 let workerConfigured = false
 
 /** Extracts all text content from a PDF File, page by page, in the browser. */
@@ -7,12 +5,27 @@ export async function extractPdfText(file: File): Promise<string> {
   const pdfjsLib = await import('pdfjs-dist')
 
   if (!workerConfigured) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.mjs`
+    // Bundle the worker from the installed package itself instead of pulling it from a
+    // CDN. This guarantees the worker version always matches the installed pdfjs-dist
+    // version (a mismatch here makes PDF parsing silently fail/hang), and it also removes
+    // the dependency on an external CDN being reachable from the user's device.
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+      'pdfjs-dist/build/pdf.worker.min.mjs',
+      import.meta.url,
+    ).toString()
     workerConfigured = true
   }
 
   const arrayBuffer = await file.arrayBuffer()
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+  let pdf
+  try {
+    pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+  } catch (err) {
+    console.error('pdfjs getDocument failed:', err)
+    throw new Error(
+      'Could not open this PDF. It may be corrupted, password-protected, or in an unsupported format. Try re-exporting it or upload a .txt file instead.',
+    )
+  }
 
   const pageTexts: string[] = []
   for (let i = 1; i <= pdf.numPages; i++) {
