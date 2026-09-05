@@ -7,7 +7,7 @@ import { Topbar } from './topbar'
 import { StatCards } from './stat-cards'
 import { SkillChart } from './skill-chart'
 import { SkillHeatmap } from './skill-heatmap'
-import { UpcomingTasks } from './upcoming-tasks'
+import { ContinueLearning } from './upcoming-tasks'
 import { Leaderboard } from './leaderboard'
 import { AiInsight } from './ai-insight'
 
@@ -77,7 +77,7 @@ export function DashboardShell() {
 
             {/* Tasks + leaderboard + insight */}
             <div className="mt-4 grid gap-4 lg:grid-cols-3">
-              <UpcomingTasks />
+              <ContinueLearning />
               <Leaderboard />
               <AiInsight />
             </div>
