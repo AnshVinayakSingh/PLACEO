@@ -70,6 +70,18 @@ export const SKILL_CURRICULUM: Record<string, string[]> = {
     'Probability',
     'Logical Reasoning',
   ],
+  'Verbal Ability': [
+    'Synonyms & Antonyms',
+    'One-Word Substitution',
+    'Spotting Errors',
+    'Sentence Correction',
+    'Sentence Improvement',
+    'Fill in the Blanks',
+    'Para Jumbles',
+    'Reading Comprehension',
+    'Idioms & Phrases',
+    'Cloze Test',
+  ],
   Communication: [
     'Self-Introduction',
     'Clarity & Structure',

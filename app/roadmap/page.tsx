@@ -91,36 +91,22 @@ function SkillSelector({
             {s}
           </button>
         ))}
-        <button
-          type="button"
-          onClick={() => onSelect(null)}
-          className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors ${
-            isOther
-              ? 'border-transparent brand-gradient text-primary-foreground'
-              : 'border-border text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          Other
-        </button>
       </div>
 
-      <AnimatePresence>
-        {isOther && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mt-3 overflow-hidden"
-          >
-            <input
-              value={customValue}
-              onChange={(e) => onCustomChange(e.target.value)}
-              placeholder="Type a skill, e.g. Data Analytics, Cybersecurity, Cloud Computing..."
-              className="glass h-10 w-full rounded-lg px-3 text-sm outline-none focus:ring-2 focus:ring-ring/60"
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className="mt-3">
+        <input
+          value={customValue}
+          onChange={(e) => {
+            onCustomChange(e.target.value)
+            onSelect(null) // typing here always takes priority over a preset pill
+          }}
+          onFocus={() => onSelect(null)}
+          placeholder="Other — type any skill: Data Analytics, Cybersecurity, Cloud Computing, Product Management, etc."
+          className={`glass h-10 w-full rounded-lg px-3 text-sm outline-none transition-shadow focus:ring-2 focus:ring-ring/60 ${
+            isOther && customValue ? 'ring-2 ring-ring/60' : ''
+          }`}
+        />
+      </div>
 
       <button
         onClick={onGenerate}

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 import { connectDB } from '@/lib/db'
 import { User } from '@/models/User'
+import { ensurePlaceoId } from '@/lib/placeo-id'
 
 export async function GET() {
   try {
@@ -10,9 +11,12 @@ export async function GET() {
 
     await connectDB()
     const user = await User.findById(session.userId).select(
-      'name email avatarUrl bio linkedinUrl leetcodeUrl targetRole college',
+      'name email avatarUrl bio linkedinUrl leetcodeUrl targetRole college placeoId',
     )
     if (!user) return NextResponse.json({ error: 'User not found.' }, { status: 404 })
+
+    // Accounts created before this feature won't have one yet — assign it now, once.
+    const placeoId = await ensurePlaceoId(user)
 
     return NextResponse.json({
       user: {
@@ -24,6 +28,7 @@ export async function GET() {
         leetcodeUrl: user.leetcodeUrl || '',
         targetRole: user.targetRole || '',
         college: user.college || '',
+        placeoId,
       },
     })
   } catch (err) {
@@ -72,6 +77,7 @@ export async function PATCH(req: Request) {
     await connectDB()
     const user = await User.findByIdAndUpdate(session.userId, update, { new: true })
     if (!user) return NextResponse.json({ error: 'User not found.' }, { status: 404 })
+    const placeoId = await ensurePlaceoId(user)
 
     return NextResponse.json({
       user: {
@@ -83,6 +89,7 @@ export async function PATCH(req: Request) {
         leetcodeUrl: user.leetcodeUrl || '',
         targetRole: user.targetRole || '',
         college: user.college || '',
+        placeoId,
       },
     })
   } catch (err) {

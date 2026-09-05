@@ -6,7 +6,9 @@ import Link from 'next/link'
 import { motion } from 'motion/react'
 import {
   Award,
+  Check,
   Code2,
+  Copy,
   Flame,
   GraduationCap,
   Mail,
@@ -40,10 +42,12 @@ type Profile = {
   leetcodeUrl: string
   targetRole: string
   college: string
+  placeoId: string
 }
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [idCopied, setIdCopied] = useState(false)
 
   useEffect(() => {
     fetch('/api/profile')
@@ -51,6 +55,14 @@ export default function ProfilePage() {
       .then((data) => setProfile(data.user))
       .catch(() => setProfile(null))
   }, [])
+
+  function handleCopyId() {
+    if (!profile?.placeoId) return
+    navigator.clipboard.writeText(profile.placeoId).then(() => {
+      setIdCopied(true)
+      setTimeout(() => setIdCopied(false), 1600)
+    })
+  }
 
   return (
     <PageShell title="Profile" description="Your career prep journey at a glance.">
@@ -84,6 +96,21 @@ export default function ProfilePage() {
                 Edit Profile
               </Link>
             </div>
+            {profile?.placeoId && (
+              <button
+                onClick={handleCopyId}
+                title="Click to copy your Placeo ID"
+                className="glass mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <span className="text-brand-cyan">ID:</span>
+                <span className="font-mono tracking-wide">{profile.placeoId}</span>
+                {idCopied ? (
+                  <Check className="size-3.5 text-emerald-400" />
+                ) : (
+                  <Copy className="size-3.5" />
+                )}
+              </button>
+            )}
             {profile?.bio && (
               <p className="mt-1.5 text-sm text-muted-foreground">{profile.bio}</p>
             )}

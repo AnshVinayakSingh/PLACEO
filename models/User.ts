@@ -12,6 +12,7 @@ export interface IUser {
   leetcodeUrl?: string
   targetRole?: string
   college?: string
+  placeoId: string
   createdAt: Date
 }
 
@@ -28,6 +29,10 @@ const UserSchema = new Schema<IUser>(
     leetcodeUrl: { type: String, default: '' },
     targetRole: { type: String, default: 'Full Stack Developer' },
     college: { type: String, default: '' },
+    // A player-tag-style unique 10-digit ID shown on the profile, used later for
+    // friend requests/leaderboard invites. Sparse+unique so old documents without
+    // one yet don't collide, and we backfill it lazily on first profile load.
+    placeoId: { type: String, unique: true, sparse: true, index: true },
   },
   { timestamps: true },
 )

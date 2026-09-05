@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import { User } from '@/models/User'
 import { hashPassword, signSession, SESSION_COOKIE } from '@/lib/auth'
+import { generateUniquePlaceoId } from '@/lib/placeo-id'
 
 export async function POST(req: Request) {
   try {
@@ -31,7 +32,8 @@ export async function POST(req: Request) {
     }
 
     const passwordHash = await hashPassword(password)
-    const user = await User.create({ name: name.trim(), email: email.toLowerCase(), passwordHash })
+    const placeoId = await generateUniquePlaceoId()
+    const user = await User.create({ name: name.trim(), email: email.toLowerCase(), passwordHash, placeoId })
 
     const token = await signSession({ userId: user._id.toString(), email: user.email, name: user.name })
 

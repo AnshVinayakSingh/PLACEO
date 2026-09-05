@@ -12,7 +12,7 @@ import {
   Tag,
 } from 'lucide-react'
 import { PageShell } from '@/components/dashboard/page-shell'
-import { PRESET_COMPANIES } from '@/lib/coding-hub-companies'
+import { PRESET_COMPANIES, TOPIC_DIFFICULTY_ORDER } from '@/lib/coding-hub-companies'
 
 // ---------- Types ----------
 
@@ -46,7 +46,7 @@ const DIFFICULTY_STYLES: Record<Difficulty, string> = {
   HARD: 'border-rose-400/30 bg-rose-400/10 text-rose-300',
 }
 
-/** Groups already-frequency-sorted questions by topic, topics sorted by question count (most first). */
+/** Groups already-frequency-sorted questions by topic, topics ordered basic → advanced. */
 function groupByTopic(questions: Question[]): [string, Question[]][] {
   const map = new Map<string, Question[]>()
   for (const q of questions) {
@@ -54,7 +54,14 @@ function groupByTopic(questions: Question[]): [string, Question[]][] {
     list.push(q)
     map.set(q.topic, list)
   }
-  return Array.from(map.entries()).sort((a, b) => b[1].length - a[1].length)
+  return Array.from(map.entries()).sort((a, b) => {
+    const ia = TOPIC_DIFFICULTY_ORDER.indexOf(a[0])
+    const ib = TOPIC_DIFFICULTY_ORDER.indexOf(b[0])
+    const rankA = ia === -1 ? TOPIC_DIFFICULTY_ORDER.length : ia
+    const rankB = ib === -1 ? TOPIC_DIFFICULTY_ORDER.length : ib
+    if (rankA !== rankB) return rankA - rankB
+    return a[0].localeCompare(b[0]) // unlisted topics: alphabetical amongst themselves
+  })
 }
 
 // ---------- Main page ----------

@@ -11,6 +11,41 @@ export type PresetCompany = {
   color: string
 }
 
+/**
+ * Basic → advanced ordering for grouping questions by topic on the Coding Hub
+ * page. Anything not listed falls to the end. Shared between the server-side
+ * fetch/cache logic and the client page (this file has zero server-only
+ * imports, so it's safe in both bundles).
+ */
+export const TOPIC_DIFFICULTY_ORDER = [
+  'Array',
+  'String',
+  'Hash Table',
+  'Two Pointers',
+  'Sliding Window',
+  'Math',
+  'Sorting',
+  'Bit Manipulation',
+  'Stack',
+  'Queue',
+  'Linked List',
+  'Binary Search',
+  'Recursion',
+  'Divide and Conquer',
+  'Greedy',
+  'Tree',
+  'Binary Tree',
+  'Binary Search Tree',
+  'Depth-First Search',
+  'Breadth-First Search',
+  'Heap (Priority Queue)',
+  'Trie',
+  'Graph',
+  'Union Find',
+  'Backtracking',
+  'Dynamic Programming',
+]
+
 export const PRESET_COMPANIES: PresetCompany[] = [
   // Big tech / product-based (global, hire heavily from India too)
   { name: 'Google', folderHint: 'Google', color: 'oklch(0.62 0.2 265)' },

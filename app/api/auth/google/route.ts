@@ -3,6 +3,7 @@ import { OAuth2Client } from 'google-auth-library'
 import { connectDB } from '@/lib/db'
 import { User } from '@/models/User'
 import { signSession, SESSION_COOKIE } from '@/lib/auth'
+import { generateUniquePlaceoId } from '@/lib/placeo-id'
 
 export async function POST(req: Request) {
   try {
@@ -32,11 +33,13 @@ export async function POST(req: Request) {
     let user = await User.findOne({ $or: [{ googleId: payload.sub }, { email: payload.email.toLowerCase() }] })
 
     if (!user) {
+      const placeoId = await generateUniquePlaceoId()
       user = await User.create({
         name: payload.name || payload.email.split('@')[0],
         email: payload.email.toLowerCase(),
         googleId: payload.sub,
         avatarUrl: payload.picture || '',
+        placeoId,
       })
     } else if (!user.googleId) {
       // Existing email/password account signing in with Google for the first time — link it.
