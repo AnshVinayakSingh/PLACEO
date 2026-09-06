@@ -109,7 +109,7 @@ export async function POST(req: Request) {
       progress.questionsAnswered += totalCount
       progress.correctAnswered += correctCount
 
-      const existingStat = progress.subtopicStats.find((s) => s.subtopic === subtopic)
+      const existingStat = progress.subtopicStats.find((s: any) => s.subtopic === subtopic)
       if (existingStat) {
         existingStat.correct += correctCount
         existingStat.total += totalCount

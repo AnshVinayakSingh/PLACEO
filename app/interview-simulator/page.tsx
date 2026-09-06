@@ -1,112 +1,318 @@
 'use client'
 
-import { useState } from 'react'
-import { motion } from 'motion/react'
-import {
-  Briefcase,
-  Code2,
-  FileText,
-  Flame,
-  Mic,
-  MessageCircle,
-  Rocket,
-  Users,
-} from 'lucide-react'
+import { useState, useCallback } from 'react'
 import { PageShell } from '@/components/dashboard/page-shell'
+import { InterviewSetupWizard, SetupConfig } from '@/components/interview-simulator/interview-setup-wizard'
+import { AiInterviewerCharacter } from '@/components/interview-simulator/ai-interviewer-character'
+import { CandidateProctorView } from '@/components/interview-simulator/candidate-proctor-view'
+import { InterviewReportCard, EvaluationResult } from '@/components/interview-simulator/interview-report-card'
+import { ShieldAlert, AlertTriangle, RotateCcw, Brain, CheckCircle2, XCircle } from 'lucide-react'
 
-const categories = [
-  { name: 'HR Interview', icon: Briefcase },
-  { name: 'Technical Interview', icon: Code2 },
-  { name: 'DSA Interview', icon: Code2 },
-  { name: 'Resume Interview', icon: FileText },
-  { name: 'Communication Test', icon: MessageCircle },
-  { name: 'Behavioral Questions', icon: Users },
-  { name: 'Startup Pitch', icon: Rocket },
-  { name: 'Roast Mode', icon: Flame },
-]
+interface QuestionItem {
+  id: string
+  track: string
+  roundName?: string
+  skill?: string
+  level: number
+  question: string
+  expectedKeyPoints: string[]
+  timeLimitSeconds: number
+  modelAnswer: string
+}
 
-const levels = [
-  { level: 0, label: 'Beginner', desc: 'Simple English, slow pace' },
-  { level: 1, label: 'Easy', desc: 'Normal HR pace' },
-  { level: 2, label: 'Standard', desc: 'Typical HR interview' },
-  { level: 3, label: 'Pressure', desc: 'Technical cross-questions' },
-  { level: 4, label: 'Intense', desc: 'Faster, tougher follow-ups' },
-  { level: 5, label: 'Extreme', desc: 'Rapid-fire, high pressure' },
-]
+interface RecordedAnswer {
+  questionId: string
+  question: string
+  userTranscript: string
+  timeTakenSeconds: number
+  expectedKeyPoints?: string[]
+  modelAnswer?: string
+  skill?: string
+  roundName?: string
+}
 
 export default function InterviewSimulatorPage() {
-  const [selectedCategory, setSelectedCategory] = useState('Technical Interview')
-  const [level, setLevel] = useState(2)
+  const [view, setView] = useState<'setup' | 'interview' | 'evaluating' | 'report' | 'terminated'>('setup')
+  const [isLoading, setIsLoading] = useState(false)
+  const [setupConfig, setSetupConfig] = useState<SetupConfig>({
+    track: 'hr',
+    jobDescription: '',
+    resumeText: '',
+    level: 2,
+    questionCount: 10,
+  })
+  const [questions, setQuestions] = useState<QuestionItem[]>([])
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [recordedAnswers, setRecordedAnswers] = useState<RecordedAnswer[]>([])
+  const [proctorViolations, setProctorViolations] = useState(0)
+  const [terminationReason, setTerminationReason] = useState('')
+  const [evaluationReport, setEvaluationReport] = useState<EvaluationResult | null>(null)
+  const [isCandidateSpeaking, setIsCandidateSpeaking] = useState(false)
+
+  // Start interview from setup wizard
+  const handleStartInterview = async (config: SetupConfig) => {
+    setIsLoading(true)
+    setSetupConfig(config)
+    setRecordedAnswers([])
+    setProctorViolations(0)
+    setCurrentIndex(0)
+
+    try {
+      const res = await fetch('/api/interview-simulator/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config),
+      })
+
+      const data = await res.json()
+      if (data.questions && data.questions.length > 0) {
+        setQuestions(data.questions)
+        setView('interview')
+      } else {
+        alert('Could not generate questions. Please check your inputs.')
+      }
+    } catch (err) {
+      console.error('Failed to generate questions:', err)
+      alert('Network or server error while generating questions.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Answer submitted by candidate
+  const handleSubmitAnswer = async (transcript: string, timeSpentSeconds: number) => {
+    const currentQ = questions[currentIndex]
+    const updatedAnswers = [
+      ...recordedAnswers,
+      {
+        questionId: currentQ.id,
+        question: currentQ.question,
+        userTranscript: transcript,
+        timeTakenSeconds: timeSpentSeconds,
+        expectedKeyPoints: currentQ.expectedKeyPoints,
+        modelAnswer: currentQ.modelAnswer,
+        skill: currentQ.skill,
+        roundName: currentQ.roundName,
+      },
+    ]
+    setRecordedAnswers(updatedAnswers)
+
+    if (currentIndex + 1 < questions.length) {
+      setCurrentIndex((prev) => prev + 1)
+    } else {
+      // Completed all questions -> Evaluate
+      await triggerEvaluation(updatedAnswers, proctorViolations)
+    }
+  }
+
+  // Skip question
+  const handleSkipQuestion = async () => {
+    const currentQ = questions[currentIndex]
+    const updatedAnswers = [
+      ...recordedAnswers,
+      {
+        questionId: currentQ.id,
+        question: currentQ.question,
+        userTranscript: '[Skipped by candidate]',
+        timeTakenSeconds: 5,
+        expectedKeyPoints: currentQ.expectedKeyPoints,
+        modelAnswer: currentQ.modelAnswer,
+        skill: currentQ.skill,
+        roundName: currentQ.roundName,
+      },
+    ]
+    setRecordedAnswers(updatedAnswers)
+
+    if (currentIndex + 1 < questions.length) {
+      setCurrentIndex((prev) => prev + 1)
+    } else {
+      await triggerEvaluation(updatedAnswers, proctorViolations)
+    }
+  }
+
+  // Proctor violation handler
+  const handleProctorViolation = (count: number, reason: string) => {
+    setProctorViolations(count)
+  }
+
+  // Proctor termination (Strike 2)
+  const handleProctorDisconnect = (reason: string) => {
+    setTerminationReason(reason)
+    setView('terminated')
+  }
+
+  // Trigger evaluation API
+  const triggerEvaluation = async (answers: RecordedAnswer[], violations: number) => {
+    setView('evaluating')
+    try {
+      const res = await fetch('/api/interview-simulator/evaluate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          track: setupConfig.track,
+          level: setupConfig.level,
+          violationsCount: violations,
+          qaList: answers,
+        }),
+      })
+
+      const reportData = await res.json()
+      if (reportData.success) {
+        setEvaluationReport(reportData)
+        setView('report')
+      } else {
+        alert('Could not complete evaluation. Returning to setup.')
+        setView('setup')
+      }
+    } catch (err) {
+      console.error('Evaluation failed:', err)
+      alert('Error during evaluation. Returning to setup.')
+      setView('setup')
+    }
+  }
+
+  const currentQ = questions[currentIndex]
 
   return (
     <PageShell
       title="AI Human Interview Simulator"
-      description="Practice realistic, voice-based interviews with instant AI feedback."
+      description="Practice realistic, voice-based interviews with animated AI interviewer, strict proctoring, and instant placement feedback."
     >
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {categories.map((c, i) => {
-          const Icon = c.icon
-          const active = selectedCategory === c.name
-          return (
-            <motion.button
-              key={c.name}
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: i * 0.05 }}
-              onClick={() => setSelectedCategory(c.name)}
-              whileHover={{ y: -3 }}
-              className={`glass relative overflow-hidden rounded-2xl p-5 text-left transition-colors ${
-                active ? 'glow-ring ring-2 ring-brand-blue/50' : ''
-              }`}
-            >
-              <span
-                className={`flex size-11 items-center justify-center rounded-xl ${
-                  active ? 'brand-gradient text-primary-foreground' : 'bg-secondary text-brand-cyan'
-                }`}
-              >
-                <Icon className="size-5" />
-              </span>
-              <h3 className="mt-3 text-sm font-semibold">{c.name}</h3>
-            </motion.button>
-          )
-        })}
-      </div>
+      {view === 'setup' && (
+        <InterviewSetupWizard onStart={handleStartInterview} isLoading={isLoading} />
+      )}
 
-      <div className="glass mt-4 rounded-2xl p-6">
-        <h3 className="font-display text-sm font-semibold">Select difficulty level</h3>
-        <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
-          {levels.map((l) => (
+      {view === 'interview' && currentQ && (
+        <div className="space-y-4">
+          {/* Top Control Bar */}
+          <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/70 px-5 py-2.5 backdrop-blur-md">
+            <div className="flex items-center gap-3">
+              <span className="flex size-2 rounded-full bg-rose-500 animate-ping"></span>
+              <span className="text-xs font-semibold text-white">INTERVIEW IN PROGRESS</span>
+              <span className="text-xs text-slate-400">·</span>
+              <span className="text-xs text-slate-400 capitalize">{setupConfig.track} Track</span>
+            </div>
+
             <button
-              key={l.level}
-              onClick={() => setLevel(l.level)}
-              className={`rounded-xl border p-3 text-left transition-colors ${
-                level === l.level
-                  ? 'border-brand-blue/50 bg-brand-blue/10'
-                  : 'border-border hover:bg-white/5'
-              }`}
+              onClick={() => {
+                if (confirm('Are you sure you want to end this interview early and generate a report?')) {
+                  triggerEvaluation(recordedAnswers, proctorViolations)
+                }
+              }}
+              className="rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-400 hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/30 transition-all"
             >
-              <span className="text-xs font-semibold text-brand-cyan">Level {l.level}</span>
-              <p className="mt-0.5 text-sm font-medium">{l.label}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{l.desc}</p>
+              End Interview Early
             </button>
-          ))}
-        </div>
+          </div>
 
-        <div className="mt-6 flex flex-col items-center justify-between gap-4 rounded-xl bg-secondary/50 p-5 sm:flex-row">
-          <div>
-            <p className="text-sm font-medium">
-              {selectedCategory} · Level {level}
-            </p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Webcam + mic access required. Estimated duration: 15–20 min.
+          {/* Split Screen Container */}
+          <div className="grid h-[calc(100vh-210px)] min-h-[580px] gap-4 lg:grid-cols-2">
+            {/* Left: AI Interviewer Character with Lip-Sync & Corporate Desk */}
+            <AiInterviewerCharacter
+              questionNumber={currentIndex + 1}
+              totalQuestions={questions.length}
+              questionText={currentQ.question}
+              track={setupConfig.track}
+              roundName={currentQ.roundName}
+              skill={currentQ.skill}
+              level={setupConfig.level}
+              isCandidateSpeaking={isCandidateSpeaking}
+              isEvaluating={false}
+            />
+
+            {/* Right: Candidate Live Webcam & Anti-Cheat Proctor */}
+            <CandidateProctorView
+              timeLimitSeconds={currentQ.timeLimitSeconds}
+              isCandidateTurn={true}
+              currentQuestionId={currentQ.id}
+              onSubmitAnswer={handleSubmitAnswer}
+              onSkipQuestion={handleSkipQuestion}
+              onProctorViolation={handleProctorViolation}
+              onProctorDisconnect={handleProctorDisconnect}
+              onSpeakingStateChange={setIsCandidateSpeaking}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Evaluating State Loader */}
+      {view === 'evaluating' && (
+        <div className="mx-auto flex max-w-lg flex-col items-center justify-center rounded-3xl border border-white/10 bg-slate-950/80 p-10 text-center backdrop-blur-xl shadow-2xl">
+          <div className="relative flex size-20 items-center justify-center rounded-2xl bg-brand-blue/20 text-brand-cyan border border-brand-blue/30 shadow-inner mb-6">
+            <Brain className="size-10 animate-pulse" />
+          </div>
+
+          <h2 className="font-display text-xl font-bold text-white">
+            Analyzing Your Placement Readiness
+          </h2>
+          <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+            Strictly evaluating your answers against campus placement benchmarks:
+          </p>
+
+          <div className="mt-6 w-full space-y-3 text-left">
+            <div className="flex items-center gap-2.5 text-xs text-brand-cyan">
+              <CheckCircle2 className="size-4 shrink-0 text-brand-cyan animate-spin" />
+              <span>Verifying technical accuracy & domain logic...</span>
+            </div>
+            <div className="flex items-center gap-2.5 text-xs text-purple-400">
+              <CheckCircle2 className="size-4 shrink-0 text-purple-400 animate-spin" />
+              <span>Measuring vocabulary, pacing, & articulation...</span>
+            </div>
+            <div className="flex items-center gap-2.5 text-xs text-emerald-400">
+              <CheckCircle2 className="size-4 shrink-0 text-emerald-400 animate-spin" />
+              <span>Calculating selection probability boost (+%)...</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Report Card */}
+      {view === 'report' && evaluationReport && (
+        <InterviewReportCard
+          report={evaluationReport}
+          track={setupConfig.track}
+          level={setupConfig.level}
+          onRetake={() => setView('setup')}
+        />
+      )}
+
+      {/* Proctor Disconnected / Terminated State */}
+      {view === 'terminated' && (
+        <div className="mx-auto max-w-xl rounded-3xl border-2 border-rose-500 bg-gradient-to-b from-rose-950/80 via-slate-950 to-black p-8 text-center backdrop-blur-xl shadow-2xl animate-in zoom-in-95">
+          <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/40 shadow-inner mb-5">
+            <ShieldAlert className="size-8 animate-bounce" />
+          </div>
+
+          <span className="rounded-full bg-rose-500/20 px-3 py-1 text-xs font-bold text-rose-400 border border-rose-500/30 uppercase tracking-wider">
+            SESSION TERMINATED BY PROCTOR
+          </span>
+
+          <h2 className="mt-4 font-display text-2xl font-bold text-white">
+            Interview Disqualified
+          </h2>
+
+          <div className="mt-4 rounded-2xl border border-rose-500/30 bg-rose-950/40 p-4 text-xs text-rose-200 text-left leading-relaxed">
+            <p className="font-bold mb-1">Violation Log:</p>
+            <p>
+              {terminationReason || 'Multiple camera focus infractions detected (candidate repeatedly looked away from screen or tilted down towards mobile device/notes).'}
             </p>
           </div>
-          <button className="brand-gradient glow-ring flex shrink-0 items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-primary-foreground transition-transform hover:scale-[1.03]">
-            <Mic className="size-4" />
-            Start Interview
-          </button>
+
+          <p className="mt-4 text-xs text-slate-400 leading-relaxed max-w-md mx-auto">
+            In campus placements and corporate technical screenings, repeated loss of eye contact triggers immediate integrity flags. Maintain direct eye contact with the camera throughout the mock session.
+          </p>
+
+          <div className="mt-6 flex items-center justify-center gap-3">
+            <button
+              onClick={() => setView('setup')}
+              className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 px-6 py-3 text-xs font-bold text-white shadow-xl shadow-cyan-500/25 transition-all hover:scale-105 active:scale-95"
+            >
+              <RotateCcw className="size-4" />
+              <span>Retry Interview (Follow Proctor Rules)</span>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </PageShell>
   )
 }

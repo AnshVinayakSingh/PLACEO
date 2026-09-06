@@ -238,7 +238,7 @@ export async function getCompanyQuestions(
   }
 
   // Look up "also asked at" for each question from the shared index.
-  const slugs = cached.questions.map((q) => q.slug)
+  const slugs = cached.questions.map((q: any) => q.slug)
   const indexDocs = await QuestionIndex.find({ slug: { $in: slugs } }).lean()
   const alsoAskedMap = new Map<string, string[]>()
   for (const doc of indexDocs) {
@@ -248,7 +248,7 @@ export async function getCompanyQuestions(
     )
   }
 
-  const questions: CodingHubQuestion[] = cached.questions.map((q) => ({
+  const questions: CodingHubQuestion[] = cached.questions.map((q: any) => ({
     title: q.title,
     slug: q.slug,
     difficulty: q.difficulty,
