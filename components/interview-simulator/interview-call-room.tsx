@@ -513,7 +513,10 @@ export function InterviewCallRoom({
       ws.send(JSON.stringify({
         setup: {
           model: `models/${tokenData.model}`,
-          responseModalities: ['AUDIO'],
+          generationConfig: {
+            responseModalities: ['AUDIO'],
+            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: persona === 'priya' ? 'Kore' : 'Puck' } } },
+          },
           systemInstruction: { parts: [{ text: buildInterviewerInstruction(persona, track, level, jobDescription, resumeText, questionCount) }] },
           inputAudioTranscription: { languageCodes: ['en-IN', 'en-US'], mode: 'SMART' },
           outputAudioTranscription: {},
@@ -528,7 +531,6 @@ export function InterviewCallRoom({
             activityHandling: 'START_OF_ACTIVITY_INTERRUPTS',
             turnCoverage: 'TURN_INCLUDES_AUDIO_ACTIVITY_AND_ALL_VIDEO',
           },
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: persona === 'priya' ? 'Kore' : 'Puck' } } },
           sessionResumption: resumeHandle ? { handle: resumeHandle } : {},
         },
       }))

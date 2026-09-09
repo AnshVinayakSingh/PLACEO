@@ -43,7 +43,7 @@ export async function POST(req: Request) {
         model: `models/${LIVE_MODEL}`,
         config: {
           sessionResumption: {},
-          responseModalities: ['AUDIO'],
+          generationConfig: { responseModalities: ['AUDIO'] },
         },
       },
     }
