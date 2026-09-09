@@ -36,16 +36,14 @@ export async function POST(req: Request) {
     // response modality are locked here; the browser supplies the conversational
     // settings after the WebSocket is authenticated. Locking every Live config
     // field in the token can make token creation fail as the API evolves.
+    // Do not embed a Bidi setup inside the ephemeral token. The current AuthToken
+    // API treats an embedded setup as the effective session configuration and can
+    // therefore ignore/reject the browser's setup. An unconstrained token lets the
+    // authenticated WebSocket provide the actual interviewer configuration.
     const payload = {
       uses: 1,
       expireTime,
-      liveConnectConstraints: {
-        model: `models/${LIVE_MODEL}`,
-        config: {
-          sessionResumption: {},
-          generationConfig: { responseModalities: ['AUDIO'] },
-        },
-      },
+      newSessionExpireTime: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
     }
 
     const response = await fetch('https://generativelanguage.googleapis.com/v1beta/auth_tokens', {
