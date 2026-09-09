@@ -24,6 +24,7 @@ export interface SetupConfig {
   resumeText: string
   level: number
   questionCount: number
+  persona: 'priya' | 'vikram'
 }
 
 interface InterviewSetupWizardProps {
@@ -92,6 +93,7 @@ export function InterviewSetupWizard({ onStart, isLoading }: InterviewSetupWizar
   const [resumeText, setResumeText] = useState('')
   const [level, setLevel] = useState(2)
   const [questionCount, setQuestionCount] = useState<number>(10)
+  const [persona, setPersona] = useState<'priya' | 'vikram'>('priya')
   const [isParsingFile, setIsParsingFile] = useState(false)
   const [fileName, setFileName] = useState<string | null>(null)
   const [extractedSkills, setExtractedSkills] = useState<string[]>([])
@@ -136,6 +138,7 @@ export function InterviewSetupWizard({ onStart, isLoading }: InterviewSetupWizar
       resumeText,
       level,
       questionCount,
+      persona,
     })
   }
 
@@ -322,11 +325,35 @@ export function InterviewSetupWizard({ onStart, isLoading }: InterviewSetupWizar
         </div>
       </div>
 
+      {/* Step 4: AI interviewer persona */}
+      <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6 backdrop-blur-md shadow-xl">
+        <div className="mb-4">
+          <span className="text-xs font-bold uppercase tracking-wider text-brand-cyan">STEP 4</span>
+          <h2 className="text-base font-semibold text-white">Choose Your AI Interviewer</h2>
+          <p className="mt-1 text-xs text-slate-400">The selected interviewer gets a distinct Gemini voice and professional persona.</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[
+            { id: 'priya' as const, name: 'Priya Sharma', role: 'Senior Technical Recruiter', voice: 'Firm, warm · Gemini Kore', image: '/avatar-1.png' },
+            { id: 'vikram' as const, name: 'Vikram Malhotra', role: 'Lead Software Engineer', voice: 'Confident, direct · Gemini Puck', image: '/avatar-2.png' },
+          ].map((person) => (
+            <button key={person.id} type="button" onClick={() => setPersona(person.id)} className={`flex items-center gap-4 rounded-2xl border p-3 text-left transition-all ${persona === person.id ? 'border-brand-cyan bg-brand-cyan/10 ring-2 ring-brand-cyan/30' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}>
+              <img src={person.image} alt={person.name} className="size-16 rounded-xl object-cover object-top" />
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-white">{person.name}</p>
+                <p className="text-[11px] text-slate-300">{person.role}</p>
+                <p className="mt-1 text-[10px] text-slate-500">{person.voice}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Step 3: Difficulty / Pace Level & Question Count */}
       <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6 backdrop-blur-md shadow-xl">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
           <div>
-            <span className="text-xs font-bold text-brand-cyan uppercase tracking-wider">STEP 4</span>
+            <span className="text-xs font-bold text-brand-cyan uppercase tracking-wider">STEP 5</span>
             <h2 className="text-base font-semibold text-white">Difficulty Pacing & Number of Questions</h2>
           </div>
 
@@ -389,7 +416,7 @@ export function InterviewSetupWizard({ onStart, isLoading }: InterviewSetupWizar
             </span>
           </div>
           <p className="mt-1 text-xs text-slate-400">
-            AI Interviewer with Lip-Sync & Strict 2-Strike Proctoring will be active.
+            Gemini Live voice interviewer + adaptive questions + two-strike AI proctoring will be active.
           </p>
         </div>
 

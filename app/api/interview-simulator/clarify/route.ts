@@ -1,9 +1,18 @@
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
+import { INTERVIEW_COOKIE, verifyInterviewSession } from '@/lib/interview-security'
+import { rateLimit } from '@/lib/rate-limit'
 
 const MODEL_FALLBACK_CHAIN = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-3.6-flash']
 
 export async function POST(req: Request) {
   try {
+    const jar = await cookies()
+    const raw = jar.get(INTERVIEW_COOKIE)?.value
+    const interviewSession = raw ? await verifyInterviewSession(raw) : null
+    if (!interviewSession) return NextResponse.json({ error: 'Secure interview session required.' }, { status: 401 })
+    const limiter = rateLimit(`interview-clarify:${interviewSession.uid}`, 12, 60_000)
+    if (!limiter.ok) return NextResponse.json({ error: 'Interview service rate limit reached. Please wait.' }, { status: 429, headers: { 'Retry-After': String(limiter.retryAfterSeconds) } })
     const body = await req.json()
     const { currentQuestion = '', candidateQuery = '', track = 'technical' } = body
 

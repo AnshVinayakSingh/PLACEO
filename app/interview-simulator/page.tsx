@@ -17,6 +17,7 @@ export default function InterviewSimulatorPage() {
     resumeText: '',
     level: 2,
     questionCount: 10,
+    persona: 'priya',
   })
   const [questions, setQuestions] = useState<QuestionItem[]>([])
   const [activeMediaStream, setActiveMediaStream] = useState<MediaStream | null>(null)
@@ -25,12 +26,20 @@ export default function InterviewSimulatorPage() {
   const [pendingAnswers, setPendingAnswers] = useState<CandidateAnswer[]>([])
   const [pendingViolations, setPendingViolations] = useState(0)
 
-  // 1. From Setup Wizard -> Generate Questions and move to Lobby
+  // 1. Create a short-lived server-side interview session, then generate the opening turn.
   const handleStartSetup = async (config: SetupConfig) => {
     setIsLoading(true)
     setSetupConfig(config)
 
     try {
+      const sessionRes = await fetch('/api/interview-simulator/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config),
+      })
+      const sessionData = await sessionRes.json()
+      if (!sessionRes.ok || !sessionData.success) throw new Error(sessionData.error || 'Secure interview session could not be created.')
+
       const res = await fetch('/api/interview-simulator/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -58,6 +67,27 @@ export default function InterviewSimulatorPage() {
     setView('call')
   }
 
+  const finalizeSecureSession = async (status: 'completed' | 'disqualified', answers: CandidateAnswer[], violations: number, finalScore?: number) => {
+    try {
+      await fetch('/api/interview-simulator/finalize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status,
+          strikeCount: violations,
+          finalScore,
+          durationSeconds: answers.reduce((sum, answer) => sum + Math.max(0, Number(answer.timeTakenSeconds || 0)), 0),
+          transcript: answers.flatMap((answer) => [
+            { role: 'interviewer', text: answer.question, at: Date.now() },
+            { role: 'candidate', text: answer.userTranscript, at: Date.now() },
+          ]),
+        }),
+      })
+    } catch (error) {
+      console.warn('Secure interview finalization failed:', error)
+    }
+  }
+
   // 3. From Call -> Finish Interview -> Evaluate Strictly
   const handleFinishInterview = async (answers: CandidateAnswer[], violations: number) => {
     setView('evaluating')
@@ -82,6 +112,7 @@ export default function InterviewSimulatorPage() {
       const reportData = await res.json()
       if (res.ok && reportData.success) {
         setEvaluationReport(reportData)
+        await finalizeSecureSession('completed', answers, violations, Number(reportData.overallScore || 0))
         setView('report')
         return
       }
@@ -96,8 +127,9 @@ export default function InterviewSimulatorPage() {
   }
 
   // 4. Disqualified on Strike 2
-  const handleDisqualify = (reason: string, answers: CandidateAnswer[]) => {
+  const handleDisqualify = async (reason: string, answers: CandidateAnswer[]) => {
     setDisqualificationReason(reason)
+    await finalizeSecureSession('disqualified', answers, 2, 0)
     setView('disqualified')
   }
 
@@ -116,7 +148,7 @@ export default function InterviewSimulatorPage() {
         <PreCallLobby
           track={setupConfig.track}
           level={setupConfig.level}
-          questionCount={questions.length}
+          questionCount={setupConfig.questionCount}
           onJoinCall={handleJoinCall}
           onCancel={() => setView('setup')}
         />
@@ -129,6 +161,10 @@ export default function InterviewSimulatorPage() {
           questions={questions}
           track={setupConfig.track}
           level={setupConfig.level}
+          persona={setupConfig.persona}
+          questionCount={setupConfig.questionCount}
+          jobDescription={setupConfig.jobDescription}
+          resumeText={setupConfig.resumeText}
           onFinishInterview={handleFinishInterview}
           onDisqualify={handleDisqualify}
         />

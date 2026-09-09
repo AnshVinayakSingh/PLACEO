@@ -1,20 +1,20 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  Mic,
-  MicOff,
+  AlertTriangle,
   Camera,
   CameraOff,
-  PhoneOff,
-  ShieldCheck,
-  ShieldAlert,
-  Eye,
-  AlertTriangle,
   Clock,
+  Eye,
+  Mic,
+  MicOff,
+  PhoneOff,
+  Radio,
+  ShieldAlert,
+  ShieldCheck,
   Sparkles,
   Volume2,
-  Radio,
 } from 'lucide-react'
 
 export interface QuestionItem {
@@ -45,8 +45,97 @@ interface InterviewCallRoomProps {
   questions: QuestionItem[]
   track: string
   level: number
+  persona: 'priya' | 'vikram'
+  questionCount: number
+  jobDescription: string
+  resumeText: string
   onFinishInterview: (answers: CandidateAnswer[], violations: number) => void
   onDisqualify: (reason: string, answers: CandidateAnswer[]) => void
+}
+
+type GazeState = 'focused' | 'looking-away' | 'looking-down' | 'no-face'
+
+type DialogueTurn = {
+  role: 'interviewer' | 'candidate'
+  text: string
+  at: number
+}
+
+const LIVE_WS = 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained'
+
+function base64ToBytes(value: string) {
+  const binary = atob(value)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  return bytes
+}
+
+function floatTo16BitPCM(input: Float32Array) {
+  const output = new Int16Array(input.length)
+  for (let i = 0; i < input.length; i++) {
+    const s = Math.max(-1, Math.min(1, input[i]))
+    output[i] = s < 0 ? s * 0x8000 : s * 0x7fff
+  }
+  return output
+}
+
+function downsample(buffer: Float32Array, inputRate: number, outputRate: number) {
+  if (inputRate === outputRate) return buffer
+  const ratio = inputRate / outputRate
+  const newLength = Math.round(buffer.length / ratio)
+  const result = new Float32Array(newLength)
+  let offsetResult = 0
+  let offsetBuffer = 0
+  while (offsetResult < result.length) {
+    const nextOffsetBuffer = Math.round((offsetResult + 1) * ratio)
+    let accum = 0
+    let count = 0
+    for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
+      accum += buffer[i]
+      count++
+    }
+    result[offsetResult] = count ? accum / count : 0
+    offsetResult++
+    offsetBuffer = nextOffsetBuffer
+  }
+  return result
+}
+
+function bytesToBase64(bytes: Uint8Array) {
+  let binary = ''
+  const chunk = 0x8000
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, Math.min(i + chunk, bytes.length)))
+  }
+  return btoa(binary)
+}
+
+function pcm16ToFloat32(bytes: Uint8Array) {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+  const result = new Float32Array(Math.floor(bytes.byteLength / 2))
+  for (let i = 0; i < result.length; i++) result[i] = view.getInt16(i * 2, true) / 32768
+  return result
+}
+
+function loadScript(src: string, id: string) {
+  return new Promise<void>((resolve, reject) => {
+    const existing = document.getElementById(id) as HTMLScriptElement | null
+    if (existing) {
+      if ((existing as any).dataset.loaded === 'true') resolve()
+      else existing.addEventListener('load', () => resolve(), { once: true })
+      return
+    }
+    const script = document.createElement('script')
+    script.id = id
+    script.src = src
+    script.async = true
+    script.onload = () => {
+      script.dataset.loaded = 'true'
+      resolve()
+    }
+    script.onerror = () => reject(new Error(`Failed to load ${src}`))
+    document.head.appendChild(script)
+  })
 }
 
 export function InterviewCallRoom({
@@ -54,976 +143,661 @@ export function InterviewCallRoom({
   questions,
   track,
   level,
+  persona,
+  questionCount,
+  jobDescription,
+  resumeText,
   onFinishInterview,
   onDisqualify,
 }: InterviewCallRoomProps) {
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [isInterviewerSpeaking, setIsInterviewerSpeaking] = useState(false)
-  const [isListeningCandidate, setIsListeningCandidate] = useState(false)
-  const [mouthOpen, setMouthOpen] = useState(0)
-  const [isBlinking, setIsBlinking] = useState(false)
-  const [interviewerPersona, setInterviewerPersona] = useState<'priya' | 'vikram'>('priya')
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const websocketRef = useRef<WebSocket | null>(null)
+  const audioContextRef = useRef<AudioContext | null>(null)
+  const processorRef = useRef<ScriptProcessorNode | null>(null)
+  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null)
+  const outputContextRef = useRef<AudioContext | null>(null)
+  const nextPlaybackTimeRef = useRef(0)
+  const playbackSourcesRef = useRef<AudioBufferSourceNode[]>([])
+  const faceLandmarkerRef = useRef<any>(null)
+  const objectDetectorRef = useRef<any>(null)
+  const proctorTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const strikesRef = useRef(0)
+  const noFaceRef = useRef(0)
+  const awayRef = useRef(0)
+  const downRef = useRef(0)
+  const extraPersonRef = useRef(0)
+  const prohibitedObjectRef = useRef(0)
+  const dialogueRef = useRef<DialogueTurn[]>([])
+  const currentCandidateTextRef = useRef('')
+  const currentInterviewerTextRef = useRef('')
+  const finishedRef = useRef(false)
+  const micEnabledRef = useRef(true)
+  const startTimeRef = useRef(Date.now())
 
+  const [connected, setConnected] = useState(false)
+  const [status, setStatus] = useState('Connecting to secure Gemini Live...')
+  const [interviewerSpeaking, setInterviewerSpeaking] = useState(false)
+  const [candidateSpeaking, setCandidateSpeaking] = useState(false)
   const [candidateTranscript, setCandidateTranscript] = useState('')
-  const [candidateAudioLevel, setCandidateAudioLevel] = useState(0)
+  const [interviewerTranscript, setInterviewerTranscript] = useState(questions[0]?.question || '')
+  const [gaze, setGaze] = useState<GazeState>('focused')
+  const [violations, setViolations] = useState(0)
+  const [warning, setWarning] = useState<string | null>(null)
+  const [callDuration, setCallDuration] = useState(0)
   const [micEnabled, setMicEnabled] = useState(true)
   const [cameraEnabled, setCameraEnabled] = useState(true)
-  const [callDuration, setCallDuration] = useState(0)
+  const [detection, setDetection] = useState('Vision proctor warming up…')
+  const [audioLevel, setAudioLevel] = useState(0)
 
-  const [violations, setViolations] = useState(0)
-  const [gazeStatus, setGazeStatus] = useState<'focused' | 'looking-away' | 'looking-down'>('focused')
-  const [warningMessage, setWarningMessage] = useState<string | null>(null)
-  const [aiDialogueStatus, setAiDialogueStatus] = useState<string>('Connecting...')
+  const personaName = persona === 'priya' ? 'Priya Sharma' : 'Vikram Malhotra'
+  const personaRole = persona === 'priya' ? 'Senior Technical Recruiter' : 'Lead Software Engineer'
+  const avatar = persona === 'priya' ? '/avatar-1.png' : '/avatar-2.png'
 
-  const recordedAnswersRef = useRef<CandidateAnswer[]>([])
-  const candidateVideoRef = useRef<HTMLVideoElement | null>(null)
-  const recognitionRef = useRef<any>(null)
-  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const promptTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const questionStartTimeRef = useRef<number>(Date.now())
-  const speechUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
-  const animFrameRef = useRef<number | null>(null)
-  const proctorLoopRef = useRef<NodeJS.Timeout | null>(null)
-  const offCenterCounterRef = useRef(0)
-  const lookingDownCounterRef = useRef(0)
-  const violationsRef = useRef(0)
-  const isCandidateSpeakingRef = useRef(false)
-  const hasSpokenPromptRef = useRef(false)
-  // True whenever the candidate is *supposed* to be heard right now. Lets us tell a
-  // deliberate rec.stop() (we're about to speak, or moving on) apart from the Web
-  // Speech API silently dying mid-turn (a known Chrome bug) so we can auto-restart it.
-  const shouldBeListeningRef = useRef(false)
-  const voicesReadyRef = useRef(false)
-  const speakTextRef = useRef<((text: string, onEnd?: () => void) => void) | null>(null)
-  // Real face-landmark proctoring (MediaPipe Tasks Vision, loaded from CDN at runtime —
-  // no build-time dependency, so it degrades gracefully to the pixel heuristic below
-  // if the CDN is unreachable).
-  const faceLandmarkerRef = useRef<any>(null)
-  const useMediapipeRef = useRef(false)
-  const noFaceCounterRef = useRef(0)
-
-  const currentQ = questions[currentIndex]
-
-  // Attach webcam stream to video element
   useEffect(() => {
-    if (candidateVideoRef.current && stream) {
-      candidateVideoRef.current.srcObject = stream
-      candidateVideoRef.current.play().catch(() => {})
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream
+      videoRef.current.play().catch(() => {})
     }
   }, [stream])
 
-  // Call duration counter
   useEffect(() => {
-    const timer = setInterval(() => setCallDuration((prev) => prev + 1), 1000)
+    const timer = setInterval(() => setCallDuration((v) => v + 1), 1000)
     return () => clearInterval(timer)
   }, [])
 
-  // Warm up TTS voices. Chrome loads voices asynchronously — calling getVoices()
-  // immediately on page load very often returns an empty array, silently causing
-  // the interviewer to speak in a default/robotic system voice or, on some setups,
-  // stay silent for the first utterance. Force a load and listen for the event.
-  useEffect(() => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return
-    const markReady = () => {
-      if (window.speechSynthesis.getVoices().length > 0) voicesReadyRef.current = true
-    }
-    markReady()
-    window.speechSynthesis.onvoiceschanged = markReady
-    return () => {
-      window.speechSynthesis.onvoiceschanged = null
-    }
+  const stopPlayback = useCallback(() => {
+    playbackSourcesRef.current.forEach((source) => {
+      try { source.stop() } catch {}
+    })
+    playbackSourcesRef.current = []
+    nextPlaybackTimeRef.current = outputContextRef.current?.currentTime || 0
+    setInterviewerSpeaking(false)
   }, [])
 
-  // Natural blinking effect for interviewer
-  useEffect(() => {
-    const blinkInterval = setInterval(() => {
-      setIsBlinking(true)
-      setTimeout(() => setIsBlinking(false), 160)
-    }, 3600)
-    return () => clearInterval(blinkInterval)
-  }, [])
-
-  // Voice activity level meter from mic stream
-  useEffect(() => {
-    if (!stream) return
-    let active = true
+  const queuePcm = useCallback((base64: string, mimeType?: string) => {
     try {
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
-      const analyser = audioCtx.createAnalyser()
-      const source = audioCtx.createMediaStreamSource(stream)
-      source.connect(analyser)
-      analyser.fftSize = 64
-      const data = new Uint8Array(analyser.frequencyBinCount)
-
-      const updateVol = () => {
-        if (!active) return
-        analyser.getByteFrequencyData(data)
-        let sum = 0
-        for (let i = 0; i < data.length; i++) sum += data[i]
-        const avg = sum / data.length
-        setCandidateAudioLevel(Math.min(100, Math.round((avg / 128) * 100)))
-        requestAnimationFrame(updateVol)
+      if (!outputContextRef.current) {
+        outputContextRef.current = new AudioContext()
       }
-      updateVol()
-    } catch (e) {
-      console.warn('Audio meter error:', e)
+      const ctx = outputContextRef.current
+      if (ctx.state === 'suspended') ctx.resume().catch(() => {})
+      const bytes = base64ToBytes(base64)
+      const pcm = pcm16ToFloat32(bytes)
+      const rateMatch = mimeType?.match(/rate=(\d+)/i)
+      const sampleRate = Number(rateMatch?.[1] || 24000)
+      const buffer = ctx.createBuffer(1, pcm.length, sampleRate)
+      buffer.copyToChannel(pcm, 0)
+      const source = ctx.createBufferSource()
+      source.buffer = buffer
+      source.connect(ctx.destination)
+      const start = Math.max(ctx.currentTime + 0.02, nextPlaybackTimeRef.current)
+      source.start(start)
+      nextPlaybackTimeRef.current = start + buffer.duration
+      playbackSourcesRef.current.push(source)
+      source.onended = () => {
+        playbackSourcesRef.current = playbackSourcesRef.current.filter((s) => s !== source)
+        if (playbackSourcesRef.current.length === 0) setInterviewerSpeaking(false)
+      }
+      setInterviewerSpeaking(true)
+    } catch (error) {
+      console.warn('Live audio playback error:', error)
     }
-    return () => {
-      active = false
-    }
-  }, [stream])
+  }, [])
 
-  // Speak text with synchronized lip-sync
-  const speakText = useCallback(
-    (text: string, onEnd?: () => void) => {
-      if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-        if (onEnd) onEnd()
-        return
-      }
+  const addDialogue = useCallback((role: 'interviewer' | 'candidate', text: string) => {
+    const clean = text.trim()
+    if (!clean) return
+    dialogueRef.current.push({ role, text: clean, at: Date.now() })
+  }, [])
 
-      // If voices genuinely haven't loaded yet (only ever happens on the very first
-      // utterance of the call), give the browser up to 600ms to finish loading them
-      // rather than speaking immediately with no voice selected.
-      if (!voicesReadyRef.current && window.speechSynthesis.getVoices().length === 0) {
-        let waited = 0
-        const waitInterval = setInterval(() => {
-          waited += 100
-          if (window.speechSynthesis.getVoices().length > 0 || waited >= 600) {
-            clearInterval(waitInterval)
-            voicesReadyRef.current = true
-            speakTextRef.current?.(text, onEnd)
-          }
-        }, 100)
-        return
-      }
+  const audit = useCallback((type: string, severity: 'info' | 'warning' | 'critical' = 'info', detail = '', confidence?: number) => {
+    void fetch('/api/interview-simulator/audit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, severity, detail, confidence }),
+      keepalive: true,
+    }).catch(() => {})
+  }, [])
 
-      window.speechSynthesis.cancel()
-      const utterance = new SpeechSynthesisUtterance(text)
-      speechUtteranceRef.current = utterance
-
-      let rate = 1.0
-      switch (level) {
-        case 0: rate = 0.85; break
-        case 1: rate = 0.95; break
-        case 2: rate = 1.02; break
-        case 3: rate = 1.12; break
-        case 4: rate = 1.22; break
-        case 5: rate = 1.35; break
-      }
-      utterance.rate = rate
-
-      const voices = window.speechSynthesis.getVoices()
-      if (voices.length > 0) {
-        const preferred = voices.find((v) =>
-          interviewerPersona === 'priya'
-            ? (v.name.includes('Google UK English Female') || v.name.includes('Zira') || v.name.includes('Samantha') || (v.lang.startsWith('en') && v.name.toLowerCase().includes('female')))
-            : (v.name.includes('Google US English') || v.name.includes('David') || (v.lang.startsWith('en') && v.name.toLowerCase().includes('male')))
-        )
-        if (preferred) utterance.voice = preferred
-      }
-
-      let wordEnergy = 0
-      utterance.onboundary = (event: any) => {
-        // Fires at each word/sentence boundary with real timing from the TTS engine.
-        // Not full phoneme-accurate lip sync, but ties mouth movement to actual
-        // speech rather than an arbitrary disconnected oscillator.
-        if (!event.name || event.name === 'word' || event.name === 'sentence') {
-          wordEnergy = 1
-        }
-      }
-
-      utterance.onstart = () => {
-        setIsInterviewerSpeaking(true)
-        setIsListeningCandidate(false)
-        let step = 0
-        const loop = () => {
-          step += 0.28 * rate
-          wordEnergy *= 0.82
-          const oscillation = Math.abs(Math.sin(step) * 0.5 + Math.sin(step * 2.2) * 0.2)
-          const rawMouth = Math.min(1, oscillation * 0.55 + wordEnergy * 0.7)
-          setMouthOpen(rawMouth)
-          animFrameRef.current = requestAnimationFrame(loop)
-        }
-        animFrameRef.current = requestAnimationFrame(loop)
-      }
-
-      utterance.onend = () => {
-        setIsInterviewerSpeaking(false)
-        setMouthOpen(0)
-        if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
-        if (onEnd) onEnd()
-      }
-
-      utterance.onerror = () => {
-        setIsInterviewerSpeaking(false)
-        setMouthOpen(0)
-        if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
-        if (onEnd) onEnd()
-      }
-
-      window.speechSynthesis.speak(utterance)
-    },
-    [level, interviewerPersona]
-  )
-
-  useEffect(() => {
-    speakTextRef.current = speakText
-  }, [speakText])
-
-  // Move to next question or complete interview
-  const proceedToNextQuestion = useCallback(
-    (recordedText: string) => {
-      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
-      if (promptTimerRef.current) clearTimeout(promptTimerRef.current)
-
-      const timeSpent = Math.round((Date.now() - questionStartTimeRef.current) / 1000)
-      const newAnswer: CandidateAnswer = {
-        questionId: currentQ.id,
-        question: currentQ.question,
-        userTranscript: recordedText.trim() || '[No answer spoken]',
-        timeTakenSeconds: Math.max(5, timeSpent),
-        expectedKeyPoints: currentQ.expectedKeyPoints,
-        modelAnswer: currentQ.modelAnswer,
-        skill: currentQ.skill,
-        roundName: currentQ.roundName,
-      }
-
-      recordedAnswersRef.current.push(newAnswer)
-      setCandidateTranscript('')
-      hasSpokenPromptRef.current = false
-
-      if (currentIndex + 1 < questions.length) {
-        setCurrentIndex((prev) => prev + 1)
-      } else {
-        // Finished all questions
-        speakText('Thank you. You have completed all questions in this interview call. Generating your evaluation now.', () => {
-          onFinishInterview(recordedAnswersRef.current, violationsRef.current)
+  const buildAnswerTurns = useCallback((): CandidateAnswer[] => {
+    const answerTurns: CandidateAnswer[] = []
+    let latestQuestion = questions[0]?.question || 'Live interview response'
+    let answerIndex = 0
+    for (const turn of dialogueRef.current) {
+      if (turn.role === 'interviewer') {
+        latestQuestion = turn.text
+      } else if (turn.role === 'candidate') {
+        answerIndex++
+        answerTurns.push({
+          questionId: `live-turn-${answerIndex}`,
+          question: latestQuestion,
+          userTranscript: turn.text,
+          timeTakenSeconds: Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000 / Math.max(1, answerIndex))),
+          expectedKeyPoints: [],
+          modelAnswer: '',
+          roundName: 'Adaptive Live Round',
+          skill: track,
         })
       }
-    },
-    [currentIndex, currentQ, questions.length, onFinishInterview, speakText]
-  )
-
-  // Start continuous listening after interviewer finishes question
-  const startCandidateListening = useCallback(() => {
-    setIsListeningCandidate(true)
-    setAiDialogueStatus('Listening to your answer...')
-    questionStartTimeRef.current = Date.now()
-    shouldBeListeningRef.current = true
-
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.start()
-      } catch {
-        // "already started" is the most common thrown error here (rapid re-calls);
-        // safe to ignore since it means recognition is already running.
-      }
     }
+    return answerTurns
+  }, [questions, track])
 
-    // Inactivity prompt after 14 seconds of silence
-    if (promptTimerRef.current) clearTimeout(promptTimerRef.current)
-    promptTimerRef.current = setTimeout(() => {
-      if (!isCandidateSpeakingRef.current && !hasSpokenPromptRef.current) {
-        hasSpokenPromptRef.current = true
-        speakText("Take your time. You can speak your answer, or say 'skip' if you'd like to move to the next topic.", () => {
-          startCandidateListening()
-        })
-      }
-    }, 14000)
-  }, [speakText])
+  const finish = useCallback(() => {
+    if (finishedRef.current) return
+    finishedRef.current = true
+    try { websocketRef.current?.close() } catch {}
+    try { processorRef.current?.disconnect() } catch {}
+    try { sourceRef.current?.disconnect() } catch {}
+    try { audioContextRef.current?.close() } catch {}
+    try { outputContextRef.current?.close() } catch {}
+    stream.getTracks().forEach((track) => track.stop())
 
-  // Handle Cross-Question / Clarification from Candidate
-  const handleCrossQuestion = useCallback(
-    async (query: string) => {
-      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
-      if (promptTimerRef.current) clearTimeout(promptTimerRef.current)
-      setAiDialogueStatus('Answering your cross-question...')
+    const answerTurns = buildAnswerTurns()
+    audit('interview-ended', 'info', 'Candidate ended the interview normally.')
+    onFinishInterview(answerTurns, strikesRef.current)
+  }, [audit, buildAnswerTurns, onFinishInterview, stream])
 
-      let reply = 'Good question. You can assume standard production constraints and proceed with your reasoning.'
-      try {
-        const res = await fetch('/api/interview-simulator/clarify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            currentQuestion: currentQ.question,
-            candidateQuery: query,
-            track,
-          }),
-        })
-        if (res.ok) {
-          const data = await res.json()
-          if (data.answer) reply = data.answer
-        }
-      } catch (e) {
-        console.warn('Clarification fetch error:', e)
-      }
+  const strike = useCallback((reason: string) => {
+    if (finishedRef.current) return
+    strikesRef.current += 1
+    const count = strikesRef.current
+    setViolations(count)
+    audit(count === 1 ? 'proctor-warning' : 'proctor-disqualification', count === 1 ? 'warning' : 'critical', reason)
+    setWarning(count === 1
+      ? `Warning 1/2 — ${reason}. Keep your face visible and remove any external device or person from the frame.`
+      : `Disqualified — second confirmed proctoring violation: ${reason}`)
 
-      speakText(reply, () => {
-        setCandidateTranscript('')
-        startCandidateListening()
-      })
-    },
-    [currentQ, track, speakText, startCandidateListening]
-  )
-
-  // Smart Speech Recognition with Intent Detection & Automatic Turn-Taking
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    if (!SpeechRecognition) {
-      setAiDialogueStatus('⚠️ Voice input unsupported in this browser — use Chrome or Edge')
+    if (count >= 2) {
+      finishedRef.current = true
+      try { websocketRef.current?.close() } catch {}
+      stream.getTracks().forEach((track) => track.stop())
+      setStatus('Interview terminated by proctor')
+      onDisqualify(reason, buildAnswerTurns())
       return
     }
 
-    const rec = new SpeechRecognition()
-    rec.continuous = true
-    rec.interimResults = true
-    rec.lang = 'en-US'
+    window.setTimeout(() => setWarning(null), 6500)
+  }, [audit, buildAnswerTurns, onDisqualify, stream])
 
-    rec.onresult = (event: any) => {
-      let fullTranscript = ''
-      for (let i = 0; i < event.results.length; i++) {
-        fullTranscript += event.results[i][0].transcript + ' '
-      }
-      const cleaned = fullTranscript.trim()
-      setCandidateTranscript(cleaned)
-      isCandidateSpeakingRef.current = true
-
-      const lower = cleaned.toLowerCase()
-
-      // 1. REPEAT INTENT (kept broad on purpose — candidates phrase this many ways)
-      const isRepeatIntent =
-        lower.includes('repeat') ||
-        lower.includes('pardon') ||
-        lower.includes('say again') ||
-        lower.includes('say that again') ||
-        lower.includes('could you repeat') ||
-        lower.includes('come again') ||
-        lower.includes("didn't catch") ||
-        lower.includes("didn't get") ||
-        lower.includes('what was that') ||
-        lower.includes('one more time') ||
-        lower.includes('excuse me') ||
-        lower.includes('sorry') ||
-        lower === 'what' ||
-        lower === 'huh' ||
-        lower.includes('dobara') ||
-        lower.includes('phir se') ||
-        lower.includes('samajh nahi aaya') ||
-        lower.includes("didn't hear")
-
-      if (isRepeatIntent && cleaned.split(' ').length <= 8) {
-        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
-        if (promptTimerRef.current) clearTimeout(promptTimerRef.current)
-        shouldBeListeningRef.current = false
-        try { rec.stop() } catch {}
-        setCandidateTranscript('')
-        speakText(`Sure, let me repeat the question for you: ${currentQ.question}`, () => {
-          startCandidateListening()
-        })
-        return
-      }
-
-      // 2. SKIP / "I DON'T KNOW" INTENT
-      const isSkipIntent =
-        lower.includes("don't know") ||
-        lower.includes('do not know') ||
-        lower.includes('no idea') ||
-        lower.includes('skip') ||
-        lower.includes('pass') ||
-        lower.includes('nahi pata') ||
-        lower.includes('not sure')
-
-      if (isSkipIntent && cleaned.split(' ').length <= 7) {
-        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
-        if (promptTimerRef.current) clearTimeout(promptTimerRef.current)
-        shouldBeListeningRef.current = false
-        try { rec.stop() } catch {}
-        speakText("Understood, that's completely alright. Let's move on to the next question.", () => {
-          proceedToNextQuestion('[Skipped / Candidate stated: I do not know]')
-        })
-        return
-      }
-
-      // 3. CROSS-QUESTION / CLARIFICATION INTENT
-      const isCrossQuestion =
-        lower.startsWith('can i') ||
-        lower.startsWith('can we') ||
-        lower.startsWith('could you clarify') ||
-        lower.startsWith('could you give') ||
-        lower.startsWith('do you mean') ||
-        lower.startsWith('is it allowed') ||
-        lower.startsWith('should i assume') ||
-        lower.startsWith('what if') ||
-        lower.startsWith('what do you mean') ||
-        lower.includes('give me an example') ||
-        lower.includes('any hint') ||
-        lower.includes('clarify that') ||
-        lower.includes('can i use')
-
-      if (isCrossQuestion && cleaned.split(' ').length <= 15) {
-        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
-        if (promptTimerRef.current) clearTimeout(promptTimerRef.current)
-        shouldBeListeningRef.current = false
-        try { rec.stop() } catch {}
-        setCandidateTranscript('')
-        handleCrossQuestion(cleaned)
-        return
-      }
-
-      // 4. SUBSTANTIVE ANSWER -> VAD SILENCE DETECTION (2.2s after user finishes speaking)
-      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
-      silenceTimerRef.current = setTimeout(() => {
-        if (cleaned.length >= 6) {
-          shouldBeListeningRef.current = false
-          try { rec.stop() } catch {}
-          speakText('Thank you. Moving to the next question.', () => {
-            proceedToNextQuestion(cleaned)
-          })
-        }
-      }, 2200)
-    }
-
-    rec.onerror = (err: any) => {
-      if (err.error === 'no-speech') return // expected during natural pauses, not an error
-      if (err.error === 'not-allowed' || err.error === 'service-not-allowed') {
-        setAiDialogueStatus('⚠️ Microphone permission blocked — please allow mic access')
-        shouldBeListeningRef.current = false
-        return
-      }
-      console.warn('Recognition error:', err.error)
-      // Transient errors (network hiccup, aborted) — let onend's restart logic recover it.
-    }
-
-    // Chrome's SpeechRecognition can silently stop (fires onend) after a pause even
-    // though we never called .stop() ourselves — this was the root cause of "the AI
-    // doesn't hear me anymore" mid-interview. If we still expect to be listening,
-    // restart it immediately instead of leaving the mic dead for the rest of the call.
-    rec.onend = () => {
-      if (shouldBeListeningRef.current) {
-        try {
-          rec.start()
-        } catch {
-          setTimeout(() => {
-            if (shouldBeListeningRef.current) {
-              try { rec.start() } catch {}
-            }
-          }, 300)
-        }
-      }
-    }
-
-    recognitionRef.current = rec
-
-    return () => {
-      shouldBeListeningRef.current = false
-      try { rec.stop() } catch {}
-    }
-  }, [currentQ, speakText, startCandidateListening, proceedToNextQuestion, handleCrossQuestion])
-
-  // Trigger question speech on question change
-  useEffect(() => {
-    if (!currentQ) return
-    setCandidateTranscript('')
-    isCandidateSpeakingRef.current = false
-    shouldBeListeningRef.current = false
-    setAiDialogueStatus('Interviewer is speaking...')
-
-    speakText(currentQ.question, () => {
-      startCandidateListening()
-    })
-
-    return () => {
-      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
-      if (promptTimerRef.current) clearTimeout(promptTimerRef.current)
-    }
-  }, [currentIndex, currentQ, speakText, startCandidateListening])
-
-  // Strict Proctoring Violation & Disqualification Trigger
-  const triggerProctorStrike = useCallback(
-    (reason: string) => {
-      violationsRef.current += 1
-      const count = violationsRef.current
-      setViolations(count)
-
-      shouldBeListeningRef.current = false
-      try { recognitionRef.current?.stop() } catch {}
-
-      if (count === 1) {
-        setWarningMessage(`⚠️ WARNING 1/2: Please look directly at the camera. ${reason}`)
-        speakText('Candidate, please keep your eyes focused directly on the screen. Looking away or checking other devices is prohibited.', () => {
-          startCandidateListening()
-        })
-        setTimeout(() => setWarningMessage(null), 6000)
-      } else if (count >= 2) {
-        setWarningMessage('❌ DISQUALIFIED: Second proctor infraction detected. Disconnecting call.')
-        speakText('Interview terminated. Multiple proctoring violations detected.', () => {
-          if (stream) stream.getTracks().forEach((t) => t.stop())
-          onDisqualify(reason, recordedAnswersRef.current)
-        })
-      }
-    },
-    [speakText, startCandidateListening, stream, onDisqualify]
-  )
-
-  // Load a real face-landmark model (MediaPipe Tasks Vision) at runtime from a CDN.
-  // This needs no npm install / build changes — it's a plain browser ESM import —
-  // so the app never fails to build even if this can't reach the CDN; it just
-  // falls back to the simpler heuristic below in that case.
+  // Secure Gemini Live session: native bidirectional audio + real-time transcription.
   useEffect(() => {
     let cancelled = false
-    ;(async () => {
+
+    const connect = async () => {
       try {
-        const mediapipeCdnBase = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14'
-        // Template-literal specifier on purpose: TypeScript only statically resolves
-        // string-literal import() specifiers, so this stays a plain runtime browser
-        // ESM import (type `any`) without needing type declarations for the CDN URL.
-        const visionModule: any = await import(/* webpackIgnore: true */ `${mediapipeCdnBase}/vision_bundle.mjs`)
+        const tokenResponse = await fetch('/api/interview-simulator/live-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            persona,
+            track,
+            level,
+            questionCount,
+            jobDescription,
+            resumeText,
+          }),
+        })
+        const tokenData = await tokenResponse.json()
+        if (!tokenResponse.ok || !tokenData.token) throw new Error(tokenData.error || 'Live token unavailable')
+        if (cancelled) return
+
+        const ws = new WebSocket(`${LIVE_WS}?access_token=${encodeURIComponent(tokenData.token)}`)
+        websocketRef.current = ws
+
+        ws.onopen = async () => {
+          if (cancelled) return
+          setConnected(true)
+          setStatus('Interviewer connected · listening')
+
+          ws.send(JSON.stringify({
+            setup: {
+              model: `models/${tokenData.model}`,
+              responseModalities: ['AUDIO'],
+              inputAudioTranscription: { languageCodes: ['en-IN', 'en-US'], mode: 'SMART' },
+              realtimeInputConfig: {
+                automaticActivityDetection: { disabled: false, startOfSpeechSensitivity: 'START_SENSITIVITY_HIGH', endOfSpeechSensitivity: 'END_SENSITIVITY_HIGH', silenceDurationMs: 650 },
+                activityHandling: 'START_OF_ACTIVITY_INTERRUPTS',
+              },
+              speechConfig: {
+                voiceConfig: {
+                  prebuiltVoiceConfig: { voiceName: persona === 'priya' ? 'Kore' : 'Puck' },
+                },
+              },
+              contextWindowCompression: { slidingWindow: {} },
+            },
+          }))
+
+          // Kick off the interview using the dynamically generated opening question.
+          const opening = questions[0]?.question || 'Please introduce yourself and walk me through your recent work.'
+          ws.send(JSON.stringify({
+            clientContent: {
+              turns: [{ role: 'user', parts: [{ text: `Begin the interview now. Ask exactly this opening question naturally, then wait for the candidate's answer: ${opening}` }] }],
+              turnComplete: true,
+            },
+          }))
+
+          // Capture microphone PCM at the 16 kHz format required by Live API.
+          const audioContext = new AudioContext()
+          audioContextRef.current = audioContext
+          const source = audioContext.createMediaStreamSource(stream)
+          const processor = audioContext.createScriptProcessor(4096, 1, 1)
+          const silentGain = audioContext.createGain()
+          silentGain.gain.value = 0
+          source.connect(processor)
+          processor.connect(silentGain)
+          silentGain.connect(audioContext.destination)
+          sourceRef.current = source
+          processorRef.current = processor
+
+          processor.onaudioprocess = (event) => {
+            if (ws.readyState !== WebSocket.OPEN || !micEnabledRef.current || finishedRef.current) return
+            const input = event.inputBuffer.getChannelData(0)
+            let sum = 0
+            for (let i = 0; i < input.length; i++) sum += input[i] * input[i]
+            setAudioLevel(Math.min(100, Math.round(Math.sqrt(sum / input.length) * 260)))
+            const pcm = floatTo16BitPCM(downsample(input, audioContext.sampleRate, 16000))
+            ws.send(JSON.stringify({
+              realtimeInput: {
+                audio: { data: bytesToBase64(new Uint8Array(pcm.buffer)), mimeType: 'audio/pcm;rate=16000' },
+              },
+            }))
+          }
+        }
+
+        ws.onmessage = (event) => {
+          try {
+            const message = JSON.parse(event.data)
+            const content = message.serverContent
+            if (!content) return
+
+            if (content.inputTranscription?.text) {
+              const text = String(content.inputTranscription.text)
+              currentCandidateTextRef.current += ` ${text}`
+              setCandidateTranscript(currentCandidateTextRef.current.trim())
+              setCandidateSpeaking(true)
+            }
+
+            if (content.outputTranscription?.text) {
+              const text = String(content.outputTranscription.text)
+              currentInterviewerTextRef.current += ` ${text}`
+              setInterviewerTranscript(currentInterviewerTextRef.current.trim())
+            }
+
+            if (content.modelTurn?.parts) {
+              setInterviewerSpeaking(true)
+              for (const part of content.modelTurn.parts) {
+                if (part.inlineData?.data) queuePcm(part.inlineData.data, part.inlineData.mimeType)
+              }
+            }
+
+            if (content.turnComplete) {
+              const candidate = currentCandidateTextRef.current.trim()
+              const interviewer = currentInterviewerTextRef.current.trim()
+              if (candidate) addDialogue('candidate', candidate)
+              if (interviewer) addDialogue('interviewer', interviewer)
+              currentCandidateTextRef.current = ''
+              currentInterviewerTextRef.current = ''
+              setCandidateTranscript('')
+              setCandidateSpeaking(false)
+              const completedCandidateTurns = dialogueRef.current.filter((turn) => turn.role === 'candidate').length
+              if (completedCandidateTurns >= questionCount && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                  clientContent: {
+                    turns: [{ role: 'user', parts: [{ text: 'You have reached the target interview length. Briefly acknowledge the candidate and conclude the interview now. Do not ask another question.' }] }],
+                    turnComplete: true,
+                  },
+                }))
+              }
+              setStatus(completedCandidateTurns >= questionCount ? 'Wrapping up the interview…' : 'Interviewer is thinking…')
+            }
+
+            if (message.goAway) setStatus('Live session preparing a seamless reconnect…')
+          } catch (error) {
+            console.warn('Live API message parse error:', error)
+          }
+        }
+
+        ws.onerror = () => setStatus('Live connection error · attempting recovery…')
+        ws.onclose = () => {
+          if (!finishedRef.current) setStatus('Live session closed')
+        }
+      } catch (error) {
+        console.error('Live interviewer connection failed:', error)
+        setStatus('Could not connect to Gemini Live. Please retry the interview.')
+      }
+    }
+
+    connect()
+    return () => {
+      cancelled = true
+      try { websocketRef.current?.close() } catch {}
+      try { processorRef.current?.disconnect() } catch {}
+      try { sourceRef.current?.disconnect() } catch {}
+      try { audioContextRef.current?.close() } catch {}
+    }
+  }, [addDialogue, jobDescription, level, persona, questionCount, queuePcm, questions, resumeText, stream, track])
+
+  // High-quality local proctoring: MediaPipe face landmarks + COCO object detection.
+  // The detector produces integrity flags, not a claim of intent; repeated confirmed
+  // signals are required before a strike.
+  useEffect(() => {
+    let cancelled = false
+    const loadVision = async () => {
+      try {
+        const base = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14'
+        const visionModule: any = await import(/* webpackIgnore: true */ `${base}/vision_bundle.mjs`)
         const { FaceLandmarker, FilesetResolver } = visionModule
-        const filesetResolver = await FilesetResolver.forVisionTasks(`${mediapipeCdnBase}/wasm`)
-        const landmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+        const fileset = await FilesetResolver.forVisionTasks(`${base}/wasm`)
+        const landmarker = await FaceLandmarker.createFromOptions(fileset, {
           baseOptions: {
-            modelAssetPath:
-              'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+            modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
             delegate: 'GPU',
           },
-          outputFaceBlendshapes: false,
-          outputFacialTransformationMatrixes: false,
           runningMode: 'VIDEO',
-          numFaces: 1,
+          numFaces: 2,
+          outputFaceBlendshapes: false,
         })
-        if (!cancelled) {
-          faceLandmarkerRef.current = landmarker
-          useMediapipeRef.current = true
-        } else {
-          landmarker.close?.()
-        }
-      } catch (e) {
-        console.warn('[proctor] Real face-landmark model unavailable, using fallback heuristic:', e)
-        useMediapipeRef.current = false
+        if (!cancelled) faceLandmarkerRef.current = landmarker
+
+        await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js', 'placeo-tfjs')
+        await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js', 'placeo-coco')
+        const coco = (window as any).cocoSsd
+        if (coco?.load && !cancelled) objectDetectorRef.current = await coco.load({ base: 'mobilenet_v2' })
+        if (!cancelled) { setDetection('Face + object models ready'); audit('model-ready', 'info', 'Face and object proctor models loaded.') }
+      } catch (error) {
+        console.warn('Advanced proctor model load failed; using face-only checks:', error)
+        setDetection('Face model active · object model unavailable'); audit('model-error', 'warning', 'Object detector could not be loaded.')
       }
-    })()
+    }
+    loadVision()
     return () => {
       cancelled = true
       try { faceLandmarkerRef.current?.close?.() } catch {}
     }
-  }, [])
+  }, [audit])
 
-  // Real-time Computer Vision Proctoring Loop (Checking Gaze & Head Tilt)
   useEffect(() => {
-    if (!stream || !candidateVideoRef.current) return
-    const canvas = document.createElement('canvas')
-    canvas.width = 160
-    canvas.height = 120
-    const ctx = canvas.getContext('2d', { willReadFrequently: true })
+    if (!stream || !videoRef.current) return
+    const video = videoRef.current
+    let running = true
+    let busy = false
 
-    // Real face-mesh based check: uses actual facial landmarks (eyes, nose, chin,
-    // forehead) to estimate yaw (turning away) and pitch (looking down at a phone),
-    // instead of guessing from raw skin-colored pixels.
-    const checkWithFaceLandmarker = (video: HTMLVideoElement): 'ok' | 'no-face' | 'away' | 'down' | null => {
-      const landmarker = faceLandmarkerRef.current
-      if (!landmarker) return null
+    const inspect = async () => {
+      if (!running || busy || video.readyState < 2 || finishedRef.current) return
+      busy = true
       try {
-        const result = landmarker.detectForVideo(video, performance.now())
-        const faces = result?.faceLandmarks
-        if (!faces || faces.length === 0) return 'no-face'
+        const landmarker = faceLandmarkerRef.current
+        if (landmarker) {
+          const result = landmarker.detectForVideo(video, performance.now())
+          const faces = result?.faceLandmarks || []
+          if (faces.length === 0) {
+            noFaceRef.current++
+            setGaze('no-face')
+          } else {
+            if (faces.length > 1) {
+              extraPersonRef.current++
+              setDetection('Multiple faces detected')
+            }
+            noFaceRef.current = Math.max(0, noFaceRef.current - 1)
+            const face = faces[0]
+            const leftEye = face[33]
+            const rightEye = face[263]
+            const nose = face[1]
+            const forehead = face[10]
+            const chin = face[152]
+            const leftIris = face[468]
+            const rightIris = face[473]
+            const leftEyeInner = face[133]
+            const rightEyeInner = face[362]
+            if (leftEye && rightEye && nose && forehead && chin) {
+              const eyeMidX = (leftEye.x + rightEye.x) / 2
+              const eyeSpan = Math.max(0.02, Math.abs(rightEye.x - leftEye.x))
+              const yaw = Math.abs((nose.x - eyeMidX) / eyeSpan)
+              const faceHeight = Math.max(0.08, Math.abs(chin.y - forehead.y))
+              const pitch = (nose.y - (leftEye.y + rightEye.y) / 2) / faceHeight
+              const irisDown = leftIris && rightIris
+                ? ((leftIris.y + rightIris.y) / 2 - (leftEye.y + rightEye.y) / 2) / faceHeight
+                : 0
+              const irisSide = leftIris && rightIris && leftEyeInner && rightEyeInner
+                ? Math.abs(((leftIris.x - leftEyeInner.x) / Math.max(0.02, leftEye.x - leftEyeInner.x)) - ((rightIris.x - rightEye.x) / Math.max(0.02, rightEyeInner.x - rightEye.x)))
+                : 0
 
-        const lm = faces[0]
-        const leftEye = lm[33]
-        const rightEye = lm[263]
-        const nose = lm[1]
-        const forehead = lm[10]
-        const chin = lm[152]
-        if (!leftEye || !rightEye || !nose || !forehead || !chin) return null
+              if (pitch > 0.30 || irisDown > 0.055) {
+                setGaze('looking-down')
+                downRef.current++
+              } else if (yaw > 0.42 || irisSide > 0.72) {
+                setGaze('looking-away')
+                awayRef.current++
+              } else {
+                setGaze('focused')
+                downRef.current = Math.max(0, downRef.current - 1)
+                awayRef.current = Math.max(0, awayRef.current - 1)
+              }
+            }
+          }
+        }
 
-        const eyeMidX = (leftEye.x + rightEye.x) / 2
-        const eyeSpan = Math.abs(rightEye.x - leftEye.x) || 0.001
-        const yawOffset = (nose.x - eyeMidX) / eyeSpan
+        const detector = objectDetectorRef.current
+        if (detector) {
+          const predictions = await detector.detect(video)
+          const persons = predictions.filter((p: any) => p.class === 'person' && p.score >= 0.55)
+          const prohibited = predictions.filter((p: any) => ['cell phone', 'laptop', 'book', 'tablet', 'remote'].includes(p.class) && p.score >= 0.55)
+          if (persons.length > 1) extraPersonRef.current++
+          else extraPersonRef.current = Math.max(0, extraPersonRef.current - 1)
+          if (prohibited.length > 0) prohibitedObjectRef.current++
+          else prohibitedObjectRef.current = Math.max(0, prohibitedObjectRef.current - 1)
+          if (prohibited.length > 0) setDetection(`Flagged object: ${prohibited[0].class}`)
+          else if (persons.length > 1) setDetection('Multiple people detected')
+          else setDetection('Scene clear')
+        }
 
-        const faceHeight = Math.abs(chin.y - forehead.y) || 0.001
-        const eyeMidY = (leftEye.y + rightEye.y) / 2
-        const pitchOffset = (nose.y - eyeMidY) / faceHeight
-
-        if (Math.abs(yawOffset) > 0.42) return 'away'
-        if (pitchOffset > 0.32) return 'down'
-        return 'ok'
-      } catch (e) {
-        return null
+        if (noFaceRef.current >= 6) {
+          noFaceRef.current = 0
+          strike('No face detected in the camera frame')
+        } else if (downRef.current >= 6) {
+          downRef.current = 0
+          strike('Repeated downward gaze detected')
+        } else if (awayRef.current >= 6) {
+          awayRef.current = 0
+          strike('Repeated gaze away from the interview screen')
+        } else if (extraPersonRef.current >= 4) {
+          extraPersonRef.current = 0
+          strike('Another person was detected in the camera frame')
+        } else if (prohibitedObjectRef.current >= 4) {
+          prohibitedObjectRef.current = 0
+          strike('A prohibited external device or reference object was detected')
+        }
+      } catch (error) {
+        console.warn('Proctor inspection error:', error)
+      } finally {
+        busy = false
       }
     }
 
-    // Fallback heuristic (used only if the real face model failed to load): crude
-    // skin-tone centroid tracking. Much less accurate, kept purely so proctoring
-    // doesn't disappear entirely on an unreachable CDN / offline dev environment.
-    const checkWithPixelHeuristic = (video: HTMLVideoElement): 'ok' | 'no-face' | 'away' | 'down' | null => {
-      if (!ctx) return null
-      ctx.drawImage(video, 0, 0, 160, 120)
-      const frame = ctx.getImageData(0, 0, 160, 120)
-      const data = frame.data
-
-      let totalWeight = 0
-      let sumX = 0
-      let sumY = 0
-      for (let i = 0; i < data.length; i += 16) {
-        const r = data[i]
-        const g = data[i + 1]
-        const b = data[i + 2]
-        const isSkin = r > 70 && g > 40 && b > 25 && r > b && r - g > 8
-        if (isSkin) {
-          const idx = i / 4
-          sumX += idx % 160
-          sumY += Math.floor(idx / 160)
-          totalWeight++
-        }
-      }
-
-      if (totalWeight < 35) return 'no-face'
-      const normX = (sumX / totalWeight - 80) / 80
-      const normY = (sumY / totalWeight - 60) / 60
-      if (Math.abs(normX) > 0.4) return 'away'
-      if (normY > 0.36) return 'down'
-      return 'ok'
+    proctorTimerRef.current = setInterval(() => { void inspect() }, 700)
+    return () => {
+      running = false
+      if (proctorTimerRef.current) clearInterval(proctorTimerRef.current)
     }
+  }, [audit, strike, stream])
 
-    proctorLoopRef.current = setInterval(() => {
-      if (!candidateVideoRef.current || candidateVideoRef.current.readyState < 2) return
-      try {
-        const status = useMediapipeRef.current
-          ? checkWithFaceLandmarker(candidateVideoRef.current)
-          : checkWithPixelHeuristic(candidateVideoRef.current)
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        audit('tab-hidden', 'warning', 'Interview tab became hidden.')
+        strike('Interview tab was hidden or another application became active')
+      } else {
+        audit('tab-visible', 'info', 'Interview tab became visible again.')
+      }
+    }
+    const onBlur = () => audit('window-blur', 'info', 'Interview window lost focus.')
+    const onFocus = () => audit('window-focus', 'info', 'Interview window regained focus.')
+    const onFullscreen = () => {
+      if (!document.fullscreenElement && !finishedRef.current) {
+        audit('fullscreen-exit', 'warning', 'Candidate exited fullscreen.')
+        strike('Fullscreen mode was exited during the interview')
+      } else if (document.fullscreenElement) {
+        audit('fullscreen-enter', 'info', 'Fullscreen mode active.')
+      }
+    }
+    const onCopy = () => audit('copy-attempt', 'warning', 'Copy action attempted during interview.')
+    const onPaste = () => audit('paste-attempt', 'warning', 'Paste action attempted during interview.')
+    const onContext = (event: MouseEvent) => { event.preventDefault(); audit('context-menu', 'warning', 'Context menu attempted during interview.') }
 
-        if (status === null) return // model not ready yet this tick, skip silently
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('blur', onBlur)
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('fullscreenchange', onFullscreen)
+    document.addEventListener('copy', onCopy)
+    document.addEventListener('paste', onPaste)
+    document.addEventListener('contextmenu', onContext)
 
-        if (status === 'no-face') {
-          noFaceCounterRef.current++
-          offCenterCounterRef.current = Math.max(0, offCenterCounterRef.current - 1)
-          lookingDownCounterRef.current = Math.max(0, lookingDownCounterRef.current - 1)
-          if (noFaceCounterRef.current >= 5) {
-            noFaceCounterRef.current = 0
-            setGazeStatus('looking-away')
-            triggerProctorStrike('Candidate moved out of camera frame / no face detected')
-          }
-          return
-        }
-        noFaceCounterRef.current = Math.max(0, noFaceCounterRef.current - 1)
-
-        if (status === 'away') {
-          setGazeStatus('looking-away')
-          offCenterCounterRef.current++
-          lookingDownCounterRef.current = Math.max(0, lookingDownCounterRef.current - 1)
-          if (offCenterCounterRef.current >= 4) {
-            offCenterCounterRef.current = 0
-            triggerProctorStrike('Looking away from screen')
-          }
-        } else if (status === 'down') {
-          setGazeStatus('looking-down')
-          lookingDownCounterRef.current++
-          offCenterCounterRef.current = Math.max(0, offCenterCounterRef.current - 1)
-          if (lookingDownCounterRef.current >= 4) {
-            lookingDownCounterRef.current = 0
-            triggerProctorStrike('Looking downward towards mobile phone or notes')
-          }
-        } else {
-          setGazeStatus('focused')
-          offCenterCounterRef.current = Math.max(0, offCenterCounterRef.current - 1)
-          lookingDownCounterRef.current = Math.max(0, lookingDownCounterRef.current - 1)
-        }
-      } catch (e) {}
-    }, 450)
+    const videoTrack = stream.getVideoTracks()[0]
+    const audioTrack = stream.getAudioTracks()[0]
+    const onVideoEnded = () => { audit('camera-ended', 'critical', 'Camera track ended.'); strike('Camera was disconnected or stopped') }
+    const onAudioEnded = () => { audit('microphone-ended', 'critical', 'Microphone track ended.'); strike('Microphone was disconnected or stopped') }
+    videoTrack?.addEventListener('ended', onVideoEnded)
+    audioTrack?.addEventListener('ended', onAudioEnded)
 
     return () => {
-      if (proctorLoopRef.current) clearInterval(proctorLoopRef.current)
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('blur', onBlur)
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('fullscreenchange', onFullscreen)
+      document.removeEventListener('copy', onCopy)
+      document.removeEventListener('paste', onPaste)
+      document.removeEventListener('contextmenu', onContext)
+      videoTrack?.removeEventListener('ended', onVideoEnded)
+      audioTrack?.removeEventListener('ended', onAudioEnded)
     }
-  }, [stream, triggerProctorStrike])
+  }, [audit, stream, strike])
 
   const toggleMic = () => {
-    if (stream) {
-      stream.getAudioTracks().forEach((t) => (t.enabled = !micEnabled))
-      setMicEnabled(!micEnabled)
-    }
+    const next = !micEnabledRef.current
+    micEnabledRef.current = next
+    stream.getAudioTracks().forEach((track) => { track.enabled = next })
+    setMicEnabled(next)
   }
 
   const toggleCamera = () => {
-    if (stream) {
-      stream.getVideoTracks().forEach((t) => (t.enabled = !cameraEnabled))
-      setCameraEnabled(!cameraEnabled)
-    }
+    const next = !cameraEnabled
+    stream.getVideoTracks().forEach((track) => { track.enabled = next })
+    setCameraEnabled(next)
   }
 
-  const handleEndCall = () => {
-    if (confirm('Are you sure you want to end this interview call? Your answers will be strictly evaluated as-is.')) {
-      shouldBeListeningRef.current = false
-      try { recognitionRef.current?.stop() } catch {}
-      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
-      if (promptTimerRef.current) clearTimeout(promptTimerRef.current)
-      if (stream) stream.getTracks().forEach((t) => t.stop())
-      onFinishInterview(recordedAnswersRef.current, violationsRef.current)
-    }
+  const handleEnd = () => {
+    if (confirm('End the interview and evaluate only the conversation completed so far?')) finish()
   }
 
-  const formatTimer = (seconds: number) => {
-    const m = Math.floor(seconds / 60).toString().padStart(2, '0')
-    const s = (seconds % 60).toString().padStart(2, '0')
-    return `${m}:${s}`
-  }
+  const formatTime = (seconds: number) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`
 
   return (
-    <div className="relative flex h-[calc(100vh-140px)] min-h-[640px] flex-col overflow-hidden rounded-3xl border border-white/15 bg-black shadow-2xl">
-      {/* Top Meeting Header Bar */}
-      <div className="flex items-center justify-between border-b border-white/10 bg-slate-950/90 px-6 py-3 backdrop-blur-md">
+    <div className="relative flex min-h-[680px] h-[calc(100vh-140px)] flex-col overflow-hidden rounded-3xl border border-white/15 bg-black shadow-2xl">
+      <div className="flex items-center justify-between border-b border-white/10 bg-slate-950/95 px-5 py-3 backdrop-blur-xl">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded-full bg-rose-500/20 px-3 py-1 text-xs font-bold text-rose-400 border border-rose-500/30">
-            <span className="size-2 rounded-full bg-rose-500 animate-ping"></span>
-            <span>REC · PROCTOR ACTIVE</span>
-          </div>
-          <span className="text-xs font-semibold text-slate-300">
-            Placement Interview · <span className="text-brand-cyan capitalize">{track} Round</span>
+          <span className="flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold text-emerald-300">
+            <span className="size-2 rounded-full bg-emerald-400 animate-pulse" /> LIVE AI INTERVIEW
           </span>
+          <span className="hidden text-xs text-slate-400 sm:inline">{track} · adaptive · {questionCount} target turns</span>
         </div>
-
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-slate-200">
-            <Clock className="size-3.5 text-brand-cyan" />
-            <span>{formatTimer(callDuration)}</span>
-          </div>
-
-          <span className="rounded-lg bg-white/10 px-2.5 py-1 text-xs font-bold text-white border border-white/10">
-            Q {currentIndex + 1} / {questions.length}
-          </span>
+        <div className="flex items-center gap-4 text-xs font-mono text-slate-200">
+          <span className="flex items-center gap-1.5"><Clock className="size-3.5 text-brand-cyan" />{formatTime(callDuration)}</span>
+          <span className="flex items-center gap-1.5"><ShieldCheck className="size-3.5 text-emerald-400" />{violations}/2</span>
         </div>
       </div>
 
-      {/* Main Split Video Grid */}
       <div className="grid flex-1 gap-4 p-4 lg:grid-cols-2">
-        {/* Tile 1: AI Interviewer Video Tile */}
-        <div className="relative flex flex-col items-center justify-center overflow-hidden rounded-2xl border border-white/15 bg-gradient-to-b from-slate-900 to-slate-950 shadow-inner">
-          {/* Corporate Office Backdrop */}
-          <div className="absolute inset-0 pointer-events-none opacity-40">
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-950 via-slate-900 to-slate-950"></div>
-            {/* Window skyline */}
-            <div className="absolute top-8 left-12 right-12 h-44 rounded-xl border border-sky-500/20 bg-sky-950/20"></div>
-          </div>
+        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-950 shadow-inner">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(59,130,246,.22),transparent_45%),linear-gradient(135deg,#111827,#020617)]" />
+          <div className="absolute inset-x-8 top-8 h-40 rounded-2xl border border-sky-400/10 bg-sky-900/10 shadow-inner backdrop-blur-sm" />
+          <div className="absolute left-1/2 top-12 -translate-x-1/2 text-[9px] uppercase tracking-[0.35em] text-sky-300/40">PLACEO INTERVIEW SUITE</div>
 
-          {/* Persona Avatar with Lip Sync */}
-          <div className="relative z-10 flex flex-col items-center">
-            {interviewerPersona === 'priya' ? (
-              <svg viewBox="0 0 320 380" className="h-64 w-64 drop-shadow-[0_20px_35px_rgba(0,0,0,0.8)] sm:h-72 sm:w-72">
-                <defs>
-                  <linearGradient id="skinPriya2" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#e8b898" /><stop offset="100%" stopColor="#d59e7c" />
-                  </linearGradient>
-                  <linearGradient id="blazerPriya2" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#1e293b" /><stop offset="100%" stopColor="#0f172a" />
-                  </linearGradient>
-                </defs>
-                <path d="M 85 140 Q 70 240 95 280 Q 160 290 225 280 Q 250 240 235 140 Z" fill="#1e1822" />
-                <path d="M 40 380 Q 60 250 120 230 L 160 270 L 200 230 Q 260 250 280 380 Z" fill="url(#blazerPriya2)" stroke="#334155" strokeWidth="2" />
-                <polygon points="120,230 160,300 200,230 180,225 160,240 140,225" fill="#38bdf8" />
-                <rect x="142" y="180" width="36" height="50" rx="8" fill="url(#skinPriya2)" />
-                <path d="M 105 130 Q 100 215 160 220 Q 220 215 215 130 Q 210 65 160 65 Q 110 65 105 130 Z" fill="url(#skinPriya2)" />
-                <path d="M 95 130 Q 120 60 160 60 Q 200 60 225 130 Q 200 95 160 100 Q 120 95 95 130 Z" fill="#1e1822" />
-
-                {/* Eyes */}
-                {isBlinking ? (
-                  <>
-                    <path d="M 122 140 Q 134 144 144 140" stroke="#1e1822" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-                    <path d="M 176 140 Q 186 144 198 140" stroke="#1e1822" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-                  </>
-                ) : (
-                  <>
-                    <ellipse cx="133" cy="139" rx="9" ry="6" fill="#ffffff" />
-                    <circle cx="134" cy="139" r="4.5" fill="#3b2219" /><circle cx="135.5" cy="137.5" r="1.5" fill="#ffffff" />
-                    <ellipse cx="187" cy="139" rx="9" ry="6" fill="#ffffff" />
-                    <circle cx="186" cy="139" r="4.5" fill="#3b2219" /><circle cx="187.5" cy="137.5" r="1.5" fill="#ffffff" />
-                  </>
-                )}
-
-                {/* Mouth Lip-Sync */}
-                {isInterviewerSpeaking ? (
-                  <ellipse cx="160" cy={186} rx={12 + mouthOpen * 3} ry={4 + mouthOpen * 11} fill="#450a0a" stroke="#c2410c" strokeWidth="1.5" />
-                ) : (
-                  <path d="M 148 184 Q 160 191 172 184" stroke="#9a3412" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-                )}
-              </svg>
-            ) : (
-              <svg viewBox="0 0 320 380" className="h-64 w-64 drop-shadow-[0_20px_35px_rgba(0,0,0,0.8)] sm:h-72 sm:w-72">
-                <defs>
-                  <linearGradient id="skinVikram2" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#d8a47f" /><stop offset="100%" stopColor="#c58e67" />
-                  </linearGradient>
-                </defs>
-                <path d="M 30 380 Q 55 240 120 225 L 160 265 L 200 225 Q 265 240 290 380 Z" fill="#0f172a" stroke="#1e293b" strokeWidth="2" />
-                <polygon points="155,230 165,230 168,320 160,340 152,320" fill="#0284c7" />
-                <rect x="140" y="175" width="40" height="52" rx="8" fill="url(#skinVikram2)" />
-                <path d="M 105 125 Q 102 210 160 216 Q 218 210 215 125 Q 210 60 160 60 Q 110 60 105 125 Z" fill="url(#skinVikram2)" />
-                <path d="M 98 120 Q 105 50 160 48 Q 215 50 222 120 Q 200 75 160 78 Q 120 75 98 120 Z" fill="#18181b" />
-
-                {isBlinking ? (
-                  <>
-                    <path d="M 122 136 Q 134 140 146 136" stroke="#18181b" strokeWidth="2.8" strokeLinecap="round" fill="none" />
-                    <path d="M 174 136 Q 186 140 198 136" stroke="#18181b" strokeWidth="2.8" strokeLinecap="round" fill="none" />
-                  </>
-                ) : (
-                  <>
-                    <ellipse cx="134" cy="135" rx="9" ry="5.5" fill="#ffffff" />
-                    <circle cx="135" cy="135" r="4.5" fill="#261c14" />
-                    <ellipse cx="186" cy="135" rx="9" ry="5.5" fill="#ffffff" />
-                    <circle cx="185" cy="135" r="4.5" fill="#261c14" />
-                  </>
-                )}
-                {/* Glasses */}
-                <rect x="120" y="125" width="28" height="20" rx="4" fill="none" stroke="#64748b" strokeWidth="2" opacity="0.8" />
-                <rect x="172" y="125" width="28" height="20" rx="4" fill="none" stroke="#64748b" strokeWidth="2" opacity="0.8" />
-                <line x1="148" y1="133" x2="172" y2="133" stroke="#64748b" strokeWidth="2" />
-
-                {isInterviewerSpeaking ? (
-                  <ellipse cx="160" cy={183} rx={13 + mouthOpen * 3} ry={4 + mouthOpen * 10} fill="#3b0764" stroke="#1e293b" strokeWidth="1.5" />
-                ) : (
-                  <path d="M 148 181 Q 160 186 172 181" stroke="#78350f" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-                )}
-              </svg>
-            )}
-          </div>
-
-          {/* Interviewer Name Tag bottom-left */}
-          <div className="absolute bottom-4 left-4 flex items-center gap-2 rounded-xl bg-slate-950/80 px-3 py-1.5 backdrop-blur-md border border-white/10">
-            <div className="flex size-6 items-center justify-center rounded-lg bg-brand-cyan/20 text-brand-cyan">
-              <Radio className="size-3" />
+          <div className="absolute inset-0 flex items-center justify-center p-8">
+            <div className={`relative w-[min(78%,420px)] overflow-hidden rounded-[2.25rem] border border-white/15 bg-slate-900/60 shadow-2xl transition-transform duration-700 ${interviewerSpeaking ? 'scale-[1.015]' : ''}`}>
+              <img src={avatar} alt={`${personaName}, AI interviewer`} className="h-[min(62vh,620px)] w-full object-cover object-top" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
+              {interviewerSpeaking && (
+                <div className="absolute inset-x-6 bottom-24 flex items-end gap-1 rounded-xl border border-white/10 bg-black/35 p-2 backdrop-blur-md">
+                  {Array.from({ length: 24 }).map((_, i) => <span key={i} className="h-1 flex-1 rounded-full bg-cyan-300/80 animate-pulse" style={{ animationDelay: `${i * 35}ms`, transform: `scaleY(${0.35 + ((i * 17) % 9) / 10})` }} />)}
+                </div>
+              )}
+              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-2 backdrop-blur-xl">
+                <div>
+                  <p className="text-xs font-bold text-white">{personaName}</p>
+                  <p className="text-[10px] text-slate-400">{personaRole}</p>
+                </div>
+                <span className={`flex items-center gap-1.5 text-[10px] font-semibold ${interviewerSpeaking ? 'text-cyan-300' : 'text-slate-400'}`}>
+                  <Volume2 className="size-3.5" /> {interviewerSpeaking ? 'Speaking' : 'Listening'}
+                </span>
+              </div>
             </div>
-            <span className="text-xs font-bold text-white">
-              {interviewerPersona === 'priya' ? 'Priya Sharma (Senior Recruiter)' : 'Vikram Malhotra (Lead Engineer)'}
-            </span>
-            {isInterviewerSpeaking && (
-              <span className="flex size-2 rounded-full bg-brand-cyan animate-ping"></span>
-            )}
           </div>
 
-          {/* Subtitle Caption Bar for Question */}
-          <div className="absolute inset-x-4 top-4 z-20 rounded-2xl bg-slate-950/85 p-3.5 backdrop-blur-md border border-white/10 shadow-lg">
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-brand-cyan">
-                {currentQ.roundName || `Question ${currentIndex + 1}`}
-              </span>
-              <span className="text-[10px] text-slate-400">
-                {aiDialogueStatus}
-              </span>
+          <div className="absolute inset-x-4 top-4 rounded-2xl border border-white/10 bg-slate-950/85 p-3 backdrop-blur-xl">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-cyan-300">AI interviewer</span>
+              <span className="text-[10px] text-slate-400">{status}</span>
             </div>
-            <p className="text-xs font-semibold text-slate-100 sm:text-sm leading-relaxed">
-              "{currentQ.question}"
-            </p>
+            <p className="mt-1 text-xs leading-relaxed text-slate-100 sm:text-sm">{interviewerTranscript || questions[0]?.question}</p>
           </div>
         </div>
 
-        {/* Tile 2: Candidate Real Webcam Video Tile */}
-        <div className="relative flex flex-col items-center justify-center overflow-hidden rounded-2xl border border-white/15 bg-black shadow-inner">
-          <video
-            ref={candidateVideoRef}
-            autoPlay
-            playsInline
-            muted
-            className="h-full w-full object-cover -scale-x-100"
-          />
+        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-black">
+          <video ref={videoRef} autoPlay playsInline muted className="h-full w-full object-cover -scale-x-100" />
 
-          {/* Proctor HUD in top-right */}
-          <div className="absolute top-4 right-4 flex items-center gap-2 rounded-xl bg-slate-950/85 px-3 py-1.5 backdrop-blur-md border border-white/10">
-            <div
-              className={`flex items-center gap-1 text-[11px] font-bold ${
-                gazeStatus === 'focused'
-                  ? 'text-emerald-400'
-                  : gazeStatus === 'looking-down'
-                  ? 'text-rose-400 animate-pulse'
-                  : 'text-amber-400'
-              }`}
-            >
-              <Eye className="size-3.5" />
-              <span>
-                {gazeStatus === 'focused' ? 'Eye Contact OK' : gazeStatus === 'looking-down' ? 'Looking Down' : 'Looking Away'}
-              </span>
+          <div className="absolute left-4 right-4 top-4 flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/85 px-3 py-2 backdrop-blur-xl">
+            <div className={`flex items-center gap-2 text-[11px] font-bold ${gaze === 'focused' ? 'text-emerald-300' : gaze === 'looking-down' ? 'text-rose-300' : 'text-amber-300'}`}>
+              <Eye className="size-4" />
+              {gaze === 'focused' ? 'Eye contact OK' : gaze === 'looking-down' ? 'Looking down' : gaze === 'no-face' ? 'Face not visible' : 'Looking away'}
             </div>
-            <span className="text-slate-600">|</span>
-            <span className={`text-xs font-bold ${violations > 0 ? 'text-rose-400' : 'text-slate-300'}`}>
-              Strikes: {violations}/2
-            </span>
+            <div className="text-[10px] text-slate-400">{detection}</div>
           </div>
 
-          {/* Candidate Name Tag & Live Mic Level bottom-left */}
-          <div className="absolute bottom-4 left-4 flex items-center gap-2 rounded-xl bg-slate-950/80 px-3 py-1.5 backdrop-blur-md border border-white/10">
-            <Mic className={`size-3.5 ${candidateAudioLevel > 15 ? 'text-emerald-400 animate-pulse' : 'text-slate-400'}`} />
-            <span className="text-xs font-bold text-white">You</span>
-            <div className="h-2 w-16 rounded-full bg-slate-800 overflow-hidden">
-              <div
-                className="h-full bg-emerald-400 transition-all duration-75"
-                style={{ width: `${candidateAudioLevel}%` }}
-              ></div>
-            </div>
-          </div>
-
-          {/* Live Subtitle of what Candidate is speaking */}
-          {candidateTranscript && (
-            <div className="absolute inset-x-4 bottom-14 rounded-2xl bg-slate-950/90 p-3 backdrop-blur-md border border-white/15 text-xs text-emerald-300 animate-in fade-in">
-              <span className="text-[10px] text-slate-400 font-semibold block mb-0.5">Speaking:</span>
-              "{candidateTranscript}"
+          {warning && (
+            <div className="absolute left-4 right-4 top-20 z-20 flex items-start gap-3 rounded-2xl border-2 border-amber-400 bg-amber-950/95 p-4 text-xs font-bold text-amber-100 shadow-2xl backdrop-blur-xl">
+              <AlertTriangle className="mt-0.5 size-5 shrink-0 text-amber-300" />
+              <span>{warning}</span>
             </div>
           )}
 
-          {/* Warning Banner Overlay */}
-          {warningMessage && (
-            <div className="absolute inset-x-4 top-16 z-30 flex items-center gap-3 rounded-2xl border-2 border-amber-500 bg-amber-950/95 p-3.5 text-xs font-bold text-amber-200 shadow-2xl backdrop-blur-md animate-in slide-in-from-top-4">
-              <AlertTriangle className="size-5 shrink-0 text-amber-400 animate-bounce" />
-              <span>{warningMessage}</span>
+          <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/85 p-3 backdrop-blur-xl">
+            <div className="flex items-center gap-2">
+              <Mic className={`size-4 ${candidateSpeaking ? 'text-emerald-300 animate-pulse' : 'text-slate-400'}`} />
+              <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-800">
+                <div className="h-full rounded-full bg-emerald-400 transition-all" style={{ width: `${audioLevel}%` }} />
+              </div>
+              <span className="text-[10px] font-semibold text-slate-300">{candidateSpeaking ? 'Listening to you…' : 'Your camera'}</span>
+            </div>
+            <span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[9px] text-slate-400">AI proctor active</span>
+          </div>
+
+          {candidateTranscript && (
+            <div className="absolute bottom-20 left-4 right-4 rounded-2xl border border-emerald-400/20 bg-slate-950/90 p-3 text-xs text-emerald-200 backdrop-blur-xl">
+              <span className="mb-1 block text-[9px] uppercase tracking-wider text-slate-500">Live transcript</span>
+              {candidateTranscript}
             </div>
           )}
         </div>
       </div>
 
-      {/* Bottom Meeting Controls Bar (Google Meet Style) */}
-      <div className="flex items-center justify-between border-t border-white/10 bg-slate-950/90 px-6 py-4 backdrop-blur-md">
-        {/* Left helper tip */}
-        <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400">
-          <Sparkles className="size-3.5 text-brand-cyan" />
-          <span>Speak naturally · Say <b>"repeat"</b> to hear again, or <b>"skip"</b> to pass</span>
+      <div className="flex items-center justify-between border-t border-white/10 bg-slate-950/95 px-5 py-4 backdrop-blur-xl">
+        <div className="hidden items-center gap-2 text-[10px] text-slate-500 sm:flex">
+          <Sparkles className="size-3.5 text-cyan-400" /> Ask the interviewer anything — Gemini can answer naturally before continuing the interview.
         </div>
-
-        {/* Center Control Buttons */}
-        <div className="flex items-center gap-3 mx-auto sm:mx-0">
-          <button
-            onClick={toggleMic}
-            className={`flex size-11 items-center justify-center rounded-2xl border transition-all ${
-              micEnabled ? 'border-white/10 bg-white/10 text-white hover:bg-white/15' : 'border-rose-500/40 bg-rose-500/20 text-rose-400'
-            }`}
-            title="Toggle Microphone"
-          >
+        <div className="mx-auto flex items-center gap-2 sm:mx-0">
+          <button onClick={toggleMic} className={`flex size-11 items-center justify-center rounded-2xl border ${micEnabled ? 'border-white/10 bg-white/10 text-white' : 'border-rose-500/30 bg-rose-500/20 text-rose-300'}`}>
             {micEnabled ? <Mic className="size-5" /> : <MicOff className="size-5" />}
           </button>
-
-          <button
-            onClick={toggleCamera}
-            className={`flex size-11 items-center justify-center rounded-2xl border transition-all ${
-              cameraEnabled ? 'border-white/10 bg-white/10 text-white hover:bg-white/15' : 'border-rose-500/40 bg-rose-500/20 text-rose-400'
-            }`}
-            title="Toggle Camera"
-          >
+          <button onClick={toggleCamera} className={`flex size-11 items-center justify-center rounded-2xl border ${cameraEnabled ? 'border-white/10 bg-white/10 text-white' : 'border-rose-500/30 bg-rose-500/20 text-rose-300'}`}>
             {cameraEnabled ? <Camera className="size-5" /> : <CameraOff className="size-5" />}
           </button>
-
-          <button
-            onClick={handleEndCall}
-            className="flex items-center gap-2 rounded-2xl bg-rose-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-rose-600/30 transition-all hover:bg-rose-700 active:scale-95"
-            title="End Interview Call"
-          >
-            <PhoneOff className="size-4" />
-            <span>End Call</span>
+          <button onClick={handleEnd} className="flex items-center gap-2 rounded-2xl bg-rose-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-rose-600/20 hover:bg-rose-700">
+            <PhoneOff className="size-4" /> End Interview
           </button>
         </div>
-
-        {/* Right Switch Persona Toggle */}
-        <div className="hidden sm:flex items-center gap-2">
-          <button
-            onClick={() => setInterviewerPersona((p) => (p === 'priya' ? 'vikram' : 'priya'))}
-            className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white"
-          >
-            Switch to {interviewerPersona === 'priya' ? 'Vikram' : 'Priya'}
-          </button>
+        <div className="hidden items-center gap-2 text-[10px] text-slate-500 sm:flex">
+          <Radio className="size-3.5 text-cyan-400" /> Secure session · {connected ? 'connected' : 'connecting'}
         </div>
       </div>
     </div>

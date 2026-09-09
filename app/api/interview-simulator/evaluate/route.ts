@@ -1,4 +1,7 @@
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
+import { INTERVIEW_COOKIE, verifyInterviewSession } from '@/lib/interview-security'
+import { rateLimit } from '@/lib/rate-limit'
 import { callGeminiForJSON } from '@/lib/gemini-interview'
 
 interface CandidateQA {
@@ -89,8 +92,27 @@ Return ONLY this JSON shape:
 
 export async function POST(req: Request) {
   try {
+    const jar = await cookies()
+    const raw = jar.get(INTERVIEW_COOKIE)?.value
+    const interviewSession = raw ? await verifyInterviewSession(raw) : null
+    if (!interviewSession) return NextResponse.json({ error: 'Secure interview session required.' }, { status: 401 })
+    const limiter = rateLimit(`interview-evaluate:${interviewSession.uid}`, 12, 60_000)
+    if (!limiter.ok) return NextResponse.json({ error: 'Interview service rate limit reached. Please wait.' }, { status: 429, headers: { 'Retry-After': String(limiter.retryAfterSeconds) } })
     const body = (await req.json()) as EvaluateRequest
-    const { track = 'hr', level = 2, violationsCount = 0, qaList = [] } = body
+    const { track = interviewSession.track, level = interviewSession.level, qaList = [] } = body
+    // Never trust a browser-provided violation count. The server uses the signed session
+    // and persisted audit trail as the integrity source of truth.
+    let serverViolations = 0
+    try {
+      const { connectDB } = await import('@/lib/db')
+      const { InterviewSession } = await import('@/models/InterviewSession')
+      await connectDB()
+      const sessionRecord = await InterviewSession.findOne({ sessionId: interviewSession.sid, userId: interviewSession.uid }).lean()
+      serverViolations = Math.min(2, (sessionRecord?.auditEvents || []).filter((event: any) => event.type === 'proctor-warning' || event.type === 'proctor-disqualification').length)
+    } catch {
+      serverViolations = 0
+    }
+    const violationsCount = serverViolations
 
     if (!qaList || qaList.length === 0) {
       return NextResponse.json({

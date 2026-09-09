@@ -1,0 +1,12 @@
+path: ./dataset
+train: images/train
+val: images/val
+names:
+  0: person
+  1: cell_phone
+  2: laptop
+  3: book
+  4: tablet
+  5: paper
+  6: remote
+  7: second_person

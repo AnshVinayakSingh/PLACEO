@@ -90,10 +90,14 @@ export function PreCallLobby({ track, level, questionCount, onJoinCall, onCancel
     }
   }
 
-  const handleJoin = () => {
-    if (stream) {
-      onJoinCall(stream)
+  const handleJoin = async () => {
+    if (!stream) return
+    try {
+      await document.documentElement.requestFullscreen?.()
+    } catch {
+      // Fullscreen can be denied by browser policy; the call room will log the exit.
     }
+    onJoinCall(stream)
   }
 
   return (
@@ -190,7 +194,7 @@ export function PreCallLobby({ track, level, questionCount, onJoinCall, onCancel
               <CheckCircle2 className="size-4 text-emerald-400" />
               <span className="text-sm font-semibold text-white capitalize">{track} Interview · Level {level}</span>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">{questionCount} Questions · Continuous voice answering active</p>
+            <p className="text-xs text-slate-400 mt-0.5">{questionCount} adaptive turns · Live voice AI · Integrity monitoring</p>
           </div>
 
           <div className="flex items-center gap-3">
