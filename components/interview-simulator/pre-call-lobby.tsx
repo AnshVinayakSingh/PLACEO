@@ -112,7 +112,7 @@ export function PreCallLobby({ track, level, questionCount, onJoinCall, onCancel
             Check Your Camera & Microphone
           </h1>
           <p className="mt-1 text-xs text-slate-400 sm:text-sm">
-            Make sure your face is well-lit and your voice is clearly audible before joining the interview call.
+            The interviewer will generate the conversation live. You can interrupt, ask questions, clarify requirements, and answer naturally.
           </p>
         </div>
 

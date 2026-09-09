@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { INTERVIEW_COOKIE, verifyInterviewSession } from '@/lib/interview-security'
 import { rateLimit } from '@/lib/rate-limit'
+import { connectDB } from '@/lib/db'
+import { InterviewSession } from '@/models/InterviewSession'
 
 const LIVE_MODEL = 'gemini-3.1-flash-live-preview'
 
@@ -38,7 +40,7 @@ CORE BEHAVIOR:
 13. When the interview is naturally complete, say a short closing and stop asking questions.
 
 OPENING:
-The frontend will provide the first question generated specifically for this candidate. Start by delivering that question naturally. Do not add a second question in the same turn.
+Generate the opening question yourself from the candidate context. Never wait for a pre-generated question and never assume a fixed question bank exists. Ask exactly one concise opening question, then stop speaking and listen.
 
 PROCTORING:
 The browser independently checks camera/microphone integrity. Never accuse the candidate of cheating yourself based on audio alone. The proctor will handle visual warnings.
@@ -79,11 +81,26 @@ export async function POST(req: Request) {
             languageCodes: ['en-IN', 'en-US'],
             mode: 'SMART',
           },
+          outputAudioTranscription: {},
+          realtimeInputConfig: {
+            automaticActivityDetection: {
+              disabled: false,
+              startOfSpeechSensitivity: 'START_SENSITIVITY_HIGH',
+              endOfSpeechSensitivity: 'END_SENSITIVITY_HIGH',
+              prefixPaddingMs: 220,
+              silenceDurationMs: 720,
+            },
+            activityHandling: 'START_OF_ACTIVITY_INTERRUPTS',
+            turnCoverage: 'TURN_INCLUDES_AUDIO_ACTIVITY_AND_ALL_VIDEO',
+          },
           speechConfig: {
             voiceConfig: {
               prebuiltVoiceConfig: { voiceName: persona === 'priya' ? 'Kore' : 'Puck' },
             },
           },
+          sessionResumption: {},
+          historyConfig: { initialHistoryInClientContent: true },
+          thinkingConfig: { thinkingLevel: 'low' },
           systemInstruction: {
             parts: [{ text: buildInstruction(persona, track, level, jobDescription, resumeText, questionCount) }],
           },
@@ -111,6 +128,16 @@ export async function POST(req: Request) {
     const token = data?.name
     if (!token) {
       return NextResponse.json({ error: 'Gemini did not return a Live API token.' }, { status: 502 })
+    }
+
+    try {
+      await connectDB()
+      await InterviewSession.updateOne(
+        { sessionId: session.sid, userId: session.uid },
+        { $set: { status: 'live', startedAt: new Date() } },
+      )
+    } catch (dbError) {
+      console.warn('Could not mark interview session live:', dbError)
     }
 
     return NextResponse.json({ token, model: LIVE_MODEL, expiresAt: expireTime })

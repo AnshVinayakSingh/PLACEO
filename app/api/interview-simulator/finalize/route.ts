@@ -15,12 +15,17 @@ export async function POST(req: Request) {
     const transcript = Array.isArray(body.transcript)
       ? body.transcript.slice(-120).map((t: any) => ({ role: t.role === 'candidate' ? 'candidate' : 'interviewer', text: safeText(t.text, 2000), at: new Date(Number(t.at) || Date.now()) }))
       : []
-    const strikeCount = Math.max(0, Math.min(2, Number(body.strikeCount || 0)))
-    const finalScore = Number.isFinite(Number(body.finalScore)) ? Math.max(0, Math.min(100, Number(body.finalScore))) : undefined
     await connectDB()
+    const existing = await InterviewSession.findOne({ sessionId: claims.sid, userId: claims.uid }).lean()
+    if (!existing) return NextResponse.json({ error: 'Interview session was not found.' }, { status: 404 })
+    if (existing.status === 'completed' || existing.status === 'disqualified') return NextResponse.json({ error: 'Interview session is already finalized.' }, { status: 409 })
+    const persistedStrikeCount = Math.min(2, (existing.auditEvents || []).filter((event: any) => event.type === 'proctor-warning' || event.type === 'proctor-disqualification').length)
+    const strikeCount = persistedStrikeCount
+    const finalStatus = strikeCount >= 2 ? 'disqualified' : status
+    const finalScore = Number.isFinite(Number(body.finalScore)) ? Math.max(0, Math.min(100, Number(body.finalScore))) : undefined
     await InterviewSession.updateOne(
       { sessionId: claims.sid, userId: claims.uid },
-      { $set: { status, strikeCount, endedAt: new Date(), durationSeconds: Math.max(0, Number(body.durationSeconds || 0)), transcript, finalScore } },
+      { $set: { status: finalStatus, strikeCount, endedAt: new Date(), durationSeconds: Math.max(0, Number(body.durationSeconds || 0)), transcript, finalScore } },
     )
     jar.delete(INTERVIEW_COOKIE)
     return NextResponse.json({ success: true })

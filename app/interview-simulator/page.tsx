@@ -26,7 +26,7 @@ export default function InterviewSimulatorPage() {
   const [pendingAnswers, setPendingAnswers] = useState<CandidateAnswer[]>([])
   const [pendingViolations, setPendingViolations] = useState(0)
 
-  // 1. Create a short-lived server-side interview session, then generate the opening turn.
+  // 1. Create a short-lived server-side interview session. Gemini Live generates the conversation.
   const handleStartSetup = async (config: SetupConfig) => {
     setIsLoading(true)
     setSetupConfig(config)
@@ -40,22 +40,14 @@ export default function InterviewSimulatorPage() {
       const sessionData = await sessionRes.json()
       if (!sessionRes.ok || !sessionData.success) throw new Error(sessionData.error || 'Secure interview session could not be created.')
 
-      const res = await fetch('/api/interview-simulator/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config),
-      })
-
-      const data = await res.json()
-      if (data.questions && Array.isArray(data.questions) && data.questions.length > 0) {
-        setQuestions(data.questions)
-        setView('lobby')
-      } else {
-        alert('Could not generate questions. Please try again.')
-      }
+      // The Live API is now the interview planner. No fixed/pre-generated question
+      // list is created here; the real-time interviewer generates every turn from
+      // the live conversation, resume, JD, track and difficulty.
+      setQuestions([])
+      setView('lobby')
     } catch (err) {
-      console.error('Failed to generate questions:', err)
-      alert('Network or server error while generating questions.')
+      console.error('Failed to create secure interview session:', err)
+      alert('Network or server error while starting the interview.')
     } finally {
       setIsLoading(false)
     }
