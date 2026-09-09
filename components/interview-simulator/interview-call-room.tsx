@@ -155,6 +155,14 @@ export function InterviewCallRoom({
   const proctorFusionRef = useRef(new TemporalProctorFusion(8500))
   const candidateActivityRef = useRef(false)
   const lastCandidateAudioAtRef = useRef(0)
+  const liveReadyRef = useRef(false)
+  const eyeBreakEpisodesRef = useRef(0)
+  const eyeBreakOpenSinceRef = useRef<number | null>(null)
+  const objectEpisodeRef = useRef(false)
+  const objectEpisodeSinceRef = useRef<number | null>(null)
+  const personEpisodeRef = useRef(false)
+  const personEpisodeSinceRef = useRef<number | null>(null)
+  const lastObjectSampleAtRef = useRef(0)
 
   const [connected, setConnected] = useState(false)
   const [status, setStatus] = useState('Preparing secure real-time interviewer…')
@@ -172,6 +180,7 @@ export function InterviewCallRoom({
   const [audioLevel, setAudioLevel] = useState(0)
   const [turnCount, setTurnCount] = useState(0)
   const [liveAssessment, setLiveAssessment] = useState<{ technicalDepth: number; communication: number; reasoning: number; confidence: number; relevance: number; evidence: string } | null>(null)
+  const [eyeBreaks, setEyeBreaks] = useState(0)
 
   const personaName = persona === 'priya' ? 'Priya Sharma' : 'Vikram Malhotra'
   const personaRole = persona === 'priya' ? 'Senior Technical Recruiter' : 'Lead Software Engineer'
@@ -318,7 +327,7 @@ export function InterviewCallRoom({
 
         const sendPcm = (input: Float32Array) => {
           const ws = websocketRef.current
-          if (!ws || ws.readyState !== WebSocket.OPEN || !micEnabledRef.current || finishedRef.current) return
+          if (!ws || ws.readyState !== WebSocket.OPEN || !liveReadyRef.current || !micEnabledRef.current || finishedRef.current) return
           let sum = 0
           for (let i = 0; i < input.length; i++) sum += input[i] * input[i]
           const rms = Math.sqrt(sum / Math.max(1, input.length))
@@ -330,9 +339,8 @@ export function InterviewCallRoom({
           } else if (candidateActivityRef.current && performance.now() - lastCandidateAudioAtRef.current > 650) {
             candidateActivityRef.current = false
             setCandidateSpeaking(false)
-            // Hybrid VAD: the server still performs automatic VAD, while this
-            // explicit end-of-stream signal makes finalization feel snappier.
-            try { ws.send(JSON.stringify({ realtimeInput: { audioStreamEnd: true } })) } catch {}
+            // Server-side VAD owns turn finalization. We intentionally do not
+            // send audioStreamEnd while automatic activity detection is enabled.
           }
           const pcm = floatTo16BitPCM(downsample(input, audioContext.sampleRate, 16000))
           try {
@@ -449,8 +457,9 @@ export function InterviewCallRoom({
 
     ws.onopen = () => {
       reconnectAttemptsRef.current = 0
-      setConnected(true)
-      setStatus(resumeHandle ? 'Interview session resumed · listening' : 'Interviewer connected · listening')
+      liveReadyRef.current = false
+      setConnected(false)
+      setStatus(resumeHandle ? 'Resuming secure interviewer session…' : 'Connecting secure real-time interviewer…')
       ws.send(JSON.stringify({
         setup: {
           model: `models/${tokenData.model}`,
@@ -462,8 +471,8 @@ export function InterviewCallRoom({
               disabled: false,
               startOfSpeechSensitivity: 'START_SENSITIVITY_HIGH',
               endOfSpeechSensitivity: 'END_SENSITIVITY_HIGH',
-              prefixPaddingMs: 220,
-              silenceDurationMs: 720,
+              prefixPaddingMs: 160,
+              silenceDurationMs: 520,
             },
             activityHandling: 'START_OF_ACTIVITY_INTERRUPTS',
             turnCoverage: 'TURN_INCLUDES_AUDIO_ACTIVITY_AND_ALL_VIDEO',
@@ -471,21 +480,25 @@ export function InterviewCallRoom({
           speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: persona === 'priya' ? 'Kore' : 'Puck' } } },
           sessionResumption: resumeHandle ? { handle: resumeHandle } : {},
           historyConfig: { initialHistoryInClientContent: true },
-          thinkingConfig: { thinkingLevel: 'low' },
+          thinkingConfig: { thinkingLevel: 'minimal' },
           contextWindowCompression: { slidingWindow: {} },
         },
       }))
-
-      if (!startedModelConversationRef.current && !resumeHandle) {
-        startedModelConversationRef.current = true
-        const openingContext = `Start the interview now. You must generate the opening question yourself from the candidate context. Do NOT use a fixed question bank. Ask exactly one concise question, then stop speaking and listen. Candidate track: ${track}; difficulty ${level}/5; target ${questionCount} candidate answer turns. Resume: ${resumeText || 'not provided'}. Job description: ${jobDescription || 'not provided'}.`
-        ws.send(JSON.stringify({ clientContent: { turns: [{ role: 'user', parts: [{ text: openingContext }] }], turnComplete: true } }))
-      }
     }
 
     ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data)
+        if (message.setupComplete) {
+          liveReadyRef.current = true
+          setConnected(true)
+          setStatus(resumeHandle ? 'Interview session resumed · listening' : 'Interviewer connected · preparing first question…')
+          if (!startedModelConversationRef.current && !resumeHandle) {
+            startedModelConversationRef.current = true
+            const openingContext = `Start the interview now. Generate the opening question yourself from the candidate context. Do NOT use a fixed question bank. Ask exactly one concise question, then stop speaking and listen. Candidate track: ${track}; difficulty ${level}/5; target ${questionCount} candidate answer turns. Resume: ${resumeText || 'not provided'}. Job description: ${jobDescription || 'not provided'}.`
+            ws.send(JSON.stringify({ clientContent: { turns: [{ role: 'user', parts: [{ text: openingContext }] }], turnComplete: true } }))
+          }
+        }
         if (message.sessionResumptionUpdate?.resumable && message.sessionResumptionUpdate?.newHandle) {
           resumptionHandleRef.current = message.sessionResumptionUpdate.newHandle
           audit('live-session-resumable', 'info', 'Live session resumption handle refreshed.')
@@ -519,7 +532,9 @@ export function InterviewCallRoom({
           if (candidate) {
             const questionForAnalysis = dialogueRef.current.filter((item) => item.role === 'interviewer').slice(-1)[0]?.text || 'Live adaptive interview question'
             addDialogue('candidate', candidate)
-            void analyzeCandidateTurn(questionForAnalysis, candidate)
+            const runShadow = () => void analyzeCandidateTurn(questionForAnalysis, candidate)
+            if ('requestIdleCallback' in window) window.requestIdleCallback(runShadow, { timeout: 1200 })
+            else window.setTimeout(runShadow, 0)
             candidateTurnCountRef.current += 1
             setTurnCount(candidateTurnCountRef.current)
             audit('candidate-spoke', 'info', candidate.slice(0, 400))
@@ -550,6 +565,7 @@ export function InterviewCallRoom({
     }
 
     ws.onclose = () => {
+      liveReadyRef.current = false
       setConnected(false)
       if (finishedRef.current || intentionallyClosingRef.current) return
       const nextAttempt = reconnectAttemptsRef.current + 1
@@ -661,36 +677,62 @@ export function InterviewCallRoom({
             }
           }
         }
-        const detector = objectDetectorRef.current
-        if (detector) {
-          const predictions = await detector.detect(video)
-          const persons = predictions.filter((p: any) => p.class === 'person' && p.score >= 0.55)
-          const prohibited = predictions.filter((p: any) => ['cell phone', 'laptop', 'book', 'tablet', 'remote'].includes(p.class) && p.score >= 0.60)
-          if (persons.length > 1) {
-            extraPersonRef.current++
-            proctorFusionRef.current.push({ name: 'multiple-faces', confidence: 0.9, at: Date.now(), durationMs: 1500 })
-          } else extraPersonRef.current = Math.max(0, extraPersonRef.current - 1)
-          if (prohibited.length) {
-            prohibitedObjectRef.current++
-            proctorFusionRef.current.push({ name: 'prohibited-object', confidence: Math.min(1, Number(prohibited[0]?.score || 0.75)), at: Date.now(), durationMs: 1800 })
+        const now = Date.now()
+        const gazeBreak = gaze === 'looking-away' || gaze === 'looking-down'
+        if (gazeBreak) {
+          if (!eyeBreakOpenSinceRef.current) eyeBreakOpenSinceRef.current = now
+          if (now - eyeBreakOpenSinceRef.current >= 1100) {
+            eyeBreakEpisodesRef.current += 1
+            eyeBreakOpenSinceRef.current = now + 2500
+            setEyeBreaks(eyeBreakEpisodesRef.current)
+            audit('eye-contact-break', 'warning', `Confirmed eye-contact break #${eyeBreakEpisodesRef.current}.`)
+            if (eyeBreakEpisodesRef.current === 3) strike('Eye contact was broken 3 times during the interview')
+            else if (eyeBreakEpisodesRef.current === 6) strike('Eye contact was broken 6 times during the interview')
           }
-          else prohibitedObjectRef.current = Math.max(0, prohibitedObjectRef.current - 1)
-          if (prohibited.length) setDetection(`Flagged object: ${prohibited[0].class}`)
-          else if (persons.length > 1) setDetection('Multiple people detected')
-          else if (gaze === 'looking-down') setDetection('Gaze anomaly under review')
-          else setDetection('Scene clear')
+        } else if (eyeBreakOpenSinceRef.current && eyeBreakOpenSinceRef.current < now) {
+          eyeBreakOpenSinceRef.current = null
         }
-        if (proctorFusionRef.current.shouldStrike()) {
-          const fused = proctorFusionRef.current.score()
-          proctorFusionRef.current.reset()
-          const reasonMap: Record<string, string> = {
-            'no-face': 'Candidate face was repeatedly unavailable',
-            'multiple-faces': 'Another person was repeatedly detected in the camera frame',
-            'looking-down': 'Repeated downward gaze was detected',
-            'looking-away': 'Repeated gaze away from the interview screen was detected',
-            'prohibited-object': 'A prohibited external device or reference object was repeatedly detected',
+
+        const detector = objectDetectorRef.current
+        if (detector && now - lastObjectSampleAtRef.current >= 1100) {
+          lastObjectSampleAtRef.current = now
+          const predictions = await detector.detect(video)
+          const persons = predictions.filter((p: any) => p.class === 'person' && p.score >= 0.60)
+          const prohibited = predictions.filter((p: any) => ['cell phone', 'laptop', 'book', 'tablet', 'remote', 'keyboard', 'mouse'].includes(p.class) && p.score >= 0.62)
+          const hasExtraPerson = persons.length > 1
+          const hasObject = prohibited.length > 0
+
+          if (hasExtraPerson) {
+            if (!personEpisodeRef.current) { personEpisodeRef.current = true; personEpisodeSinceRef.current = now }
+            if (personEpisodeSinceRef.current && now - personEpisodeSinceRef.current >= 1300) {
+              personEpisodeSinceRef.current = null
+              personEpisodeRef.current = false
+              audit('multiple-person-confirmed', 'warning', 'A second person was persistently detected in the camera frame.')
+              strike('A second person was detected in the interview camera frame')
+            }
+          } else {
+            personEpisodeRef.current = false
+            personEpisodeSinceRef.current = null
           }
-          strike(reasonMap[fused.dominantSignal || ''] || 'Multiple integrity signals were repeatedly detected')
+
+          if (hasObject) {
+            if (!objectEpisodeRef.current) { objectEpisodeRef.current = true; objectEpisodeSinceRef.current = now }
+            if (objectEpisodeSinceRef.current && now - objectEpisodeSinceRef.current >= 1300) {
+              objectEpisodeSinceRef.current = null
+              objectEpisodeRef.current = false
+              const objectName = String(prohibited[0]?.class || 'external object')
+              audit('prohibited-object-confirmed', 'warning', `Persistently detected: ${objectName}`)
+              strike(`A prohibited object (${objectName}) was detected in the camera frame`)
+            }
+          } else {
+            objectEpisodeRef.current = false
+            objectEpisodeSinceRef.current = null
+          }
+
+          if (hasObject) setDetection(`Flagged object: ${prohibited[0].class}`)
+          else if (hasExtraPerson) setDetection('Multiple people detected')
+          else if (gazeBreak) setDetection(`Eye-contact breaks: ${eyeBreakEpisodesRef.current}/3`)
+          else setDetection('Scene clear')
         }
       } catch (error) { console.warn('Proctor inspection error:', error) }
       finally { busy = false }

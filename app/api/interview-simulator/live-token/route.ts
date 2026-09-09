@@ -5,7 +5,9 @@ import { rateLimit } from '@/lib/rate-limit'
 import { connectDB } from '@/lib/db'
 import { InterviewSession } from '@/models/InterviewSession'
 
-const LIVE_MODEL = 'gemini-3.1-flash-live-preview'
+// 2.5 is currently the safer low-latency default for this app. Override on Render
+// with GEMINI_LIVE_MODEL when you want to test another Live model.
+const LIVE_MODEL = process.env.GEMINI_LIVE_MODEL || 'gemini-2.5-flash-native-audio-preview-12-2025'
 
 const buildInstruction = (persona: 'priya' | 'vikram', track: string, level: number, jobDescription: string, resumeText: string, questionCount: number) => {
   const identity = persona === 'priya'
@@ -88,7 +90,7 @@ export async function POST(req: Request) {
               startOfSpeechSensitivity: 'START_SENSITIVITY_HIGH',
               endOfSpeechSensitivity: 'END_SENSITIVITY_HIGH',
               prefixPaddingMs: 220,
-              silenceDurationMs: 720,
+              silenceDurationMs: 520,
             },
             activityHandling: 'START_OF_ACTIVITY_INTERRUPTS',
             turnCoverage: 'TURN_INCLUDES_AUDIO_ACTIVITY_AND_ALL_VIDEO',
@@ -100,7 +102,7 @@ export async function POST(req: Request) {
           },
           sessionResumption: {},
           historyConfig: { initialHistoryInClientContent: true },
-          thinkingConfig: { thinkingLevel: 'low' },
+          thinkingConfig: { thinkingLevel: 'minimal' },
           systemInstruction: {
             parts: [{ text: buildInstruction(persona, track, level, jobDescription, resumeText, questionCount) }],
           },

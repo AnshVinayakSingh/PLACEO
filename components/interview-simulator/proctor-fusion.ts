@@ -16,15 +16,14 @@ export type ProctorSignal = {
   durationMs?: number
 }
 
-type ActiveSignal = ProctorSignal & { expiresAt: number }
-
 /**
- * Temporal fusion for browser proctoring.
- * A single noisy frame never becomes a strike. Signals are accumulated over a
- * short rolling window and decay quickly after the scene returns to normal.
+ * Temporal fusion for browser proctoring. It deliberately does not turn one
+ * noisy frame into a violation. The caller decides the policy for each class
+ * of event (for example, object/person = 1 warning then disqualify; gaze = 3
+ * confirmed breaks per warning).
  */
 export class TemporalProctorFusion {
-  private active: ActiveSignal[] = []
+  private active: ProctorSignal[] = []
   private readonly windowMs: number
 
   constructor(windowMs = 8500) {
@@ -33,14 +32,13 @@ export class TemporalProctorFusion {
 
   push(signal: ProctorSignal) {
     const confidence = Math.max(0, Math.min(1, signal.confidence))
-    const duration = Math.max(500, signal.durationMs ?? 1600)
-    this.active.push({ ...signal, confidence, expiresAt: signal.at + duration })
+    this.active.push({ ...signal, confidence })
     this.prune(signal.at)
   }
 
   private prune(now: number) {
     const floor = now - this.windowMs
-    this.active = this.active.filter((s) => s.at >= floor && s.expiresAt >= now)
+    this.active = this.active.filter((s) => s.at >= floor)
   }
 
   score(now = Date.now()) {
@@ -75,12 +73,6 @@ export class TemporalProctorFusion {
       dominantWeight: dominant?.[1] || 0,
       sampleCount: this.active.length,
     }
-  }
-
-  shouldStrike(now = Date.now()) {
-    const result = this.score(now)
-    // Require both temporal persistence and meaningful confidence.
-    return result.sampleCount >= 4 && result.score >= 3.2 && result.dominantWeight >= 1.15
   }
 
   reset() {
