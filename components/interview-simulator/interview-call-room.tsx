@@ -464,6 +464,13 @@ export function InterviewCallRoom({
     if (!tokenResponse.ok || !tokenData.token) throw new Error(tokenData.error || 'Live token unavailable')
 
     const ws = new WebSocket(`${LIVE_WS}?access_token=${encodeURIComponent(tokenData.token)}`)
+    // Gemini Live sends server messages as binary WebSocket frames. The default
+    // browser binaryType is 'blob', and `JSON.parse(Blob)` fails silently
+    // (SyntaxError: "[object Blob]" is not valid JSON) — every server message,
+    // including setupComplete and audio, was being dropped because of this.
+    // 'arraybuffer' lets us decode synchronously below instead of needing an
+    // async Blob.text() read inside onmessage.
+    ws.binaryType = 'arraybuffer'
     websocketRef.current = ws
 
     ws.onopen = () => {
@@ -499,7 +506,8 @@ export function InterviewCallRoom({
 
     ws.onmessage = (event) => {
       try {
-        const message = JSON.parse(event.data)
+        const raw = typeof event.data === 'string' ? event.data : new TextDecoder('utf-8').decode(event.data as ArrayBuffer)
+        const message = JSON.parse(raw)
         if (message.error) {
           console.error('Live API server error message:', message.error)
         }
