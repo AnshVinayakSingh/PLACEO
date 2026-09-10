@@ -500,6 +500,15 @@ export function InterviewCallRoom({
     ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data)
+        if (message.error) {
+          console.error('Live API server error message:', message.error)
+        }
+        if (!message.setupComplete && !message.sessionResumptionUpdate && !message.goAway && !message.serverContent && !message.error) {
+          // Anything else is an unrecognized message shape — log it once so a
+          // real cause (bad model access, invalid setup field, etc.) is visible
+          // instead of silently doing nothing.
+          console.warn('Live API: unrecognized message shape:', message)
+        }
         if (message.setupComplete) {
           liveReadyRef.current = true
           setConnected(true)
@@ -570,12 +579,17 @@ export function InterviewCallRoom({
       }
     }
 
-    ws.onerror = () => {
+    ws.onerror = (event) => {
+      console.error('Live WebSocket error event:', event)
       setConnected(false)
       setStatus('Real-time connection interrupted · recovering…')
     }
 
-    ws.onclose = () => {
+    ws.onclose = (event) => {
+      // Surface the real close code/reason — this is the only place Google tells
+      // us *why* the Live session ended (bad model access, invalid setup, quota,
+      // etc). Without logging this, "it just doesn't talk" is undiagnosable.
+      console.error('Live WebSocket closed:', event.code, event.reason || '(no reason given)')
       liveReadyRef.current = false
       setConnected(false)
       if (finishedRef.current || intentionallyClosingRef.current) return
