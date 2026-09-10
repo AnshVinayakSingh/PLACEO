@@ -14,6 +14,8 @@ type Analysis = {
   relevance: number
   evidence: string
   nextProbe: string
+  isNonsenseOrJoke: boolean
+  nonsenseReason: string
 }
 
 export async function POST(req: Request) {
@@ -33,8 +35,10 @@ export async function POST(req: Request) {
 
     const result = await callGeminiForJSON<Analysis>(
       apiKey,
-      `You are the silent assessment engine running beside a live interview. Do not act as the interviewer. Grade only what the candidate actually said. Never invent missing facts. Return strict JSON only. Scores are 0-100. nextProbe should be one short, useful probe for the live interviewer, not a model answer.`,
-      `Track: ${session.track}\nDifficulty: ${session.level}/5\nInterviewer question: ${question}\nCandidate answer: ${answer}\n\nReturn exactly: {"technicalDepth":number,"communication":number,"reasoning":number,"confidence":number,"relevance":number,"evidence":string,"nextProbe":string}`,
+      `You are the silent assessment engine running beside a live interview. Do not act as the interviewer. Grade only what the candidate actually said. Never invent missing facts. Return strict JSON only. Scores are 0-100. nextProbe should be one short, useful probe for the live interviewer, not a model answer.
+
+isNonsenseOrJoke must be true only when the answer is clearly NOT a genuine attempt — random gibberish, insults, obvious trolling, or content unrelated to any interview answer. It must be false for a genuine wrong/weak/incomplete answer, a simple "I don't know", or a short but honest answer. Be conservative: only flag it when you are confident it is not a real attempt, since this can end the interview.`,
+      `Track: ${session.track}\nDifficulty: ${session.level}/5\nInterviewer question: ${question}\nCandidate answer: ${answer}\n\nReturn exactly: {"technicalDepth":number,"communication":number,"reasoning":number,"confidence":number,"relevance":number,"evidence":string,"nextProbe":string,"isNonsenseOrJoke":boolean,"nonsenseReason":string}`,
       { temperature: 0.15, maxOutputTokens: 700 },
     )
     if (!result.ok) return NextResponse.json({ error: 'Live analysis unavailable.' }, { status: 502 })
@@ -51,6 +55,8 @@ export async function POST(req: Request) {
         relevance: clamp(data.relevance),
         evidence: safeText(data.evidence, 500),
         nextProbe: safeText(data.nextProbe, 700),
+        isNonsenseOrJoke: Boolean(data.isNonsenseOrJoke),
+        nonsenseReason: safeText(data.nonsenseReason, 300),
       },
     })
   } catch (error) {

@@ -26,6 +26,9 @@ export interface IInterviewSession {
   auditEvents: IInterviewAuditEvent[]
   transcript?: Array<{ role: 'interviewer' | 'candidate'; text: string; at: Date }>
   finalScore?: number
+  // Interviewer questions carried over from this candidate's recent past sessions,
+  // captured at session-creation time so the live interviewer can avoid repeating them.
+  priorQuestionsAsked?: string[]
 }
 
 const AuditEventSchema = new Schema<IInterviewAuditEvent>(
@@ -56,6 +59,7 @@ const InterviewSessionSchema = new Schema<IInterviewSession>(
     auditEvents: { type: [AuditEventSchema], default: [] },
     transcript: { type: [{ role: String, text: String, at: Date }], default: [] },
     finalScore: Number,
+    priorQuestionsAsked: { type: [String], default: [] },
   },
   { timestamps: true },
 )

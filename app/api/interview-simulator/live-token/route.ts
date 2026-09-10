@@ -4,10 +4,14 @@ import { INTERVIEW_COOKIE, verifyInterviewSession } from '@/lib/interview-securi
 import { rateLimit } from '@/lib/rate-limit'
 import { connectDB } from '@/lib/db'
 import { InterviewSession } from '@/models/InterviewSession'
+import { buildInterviewerInstruction } from '@/lib/interview-instruction'
 
-// 2.5 is currently the safer low-latency default for this app. Override on Render
-// with GEMINI_LIVE_MODEL when you want to test another Live model.
-const LIVE_MODEL = process.env.GEMINI_LIVE_MODEL || 'gemini-2.5-flash-native-audio-preview-12-2025'
+// gemini-2.5-flash-native-audio-preview-12-2025 has been unreliable in production
+// since ~2026-05-27 (frequent mid-turn WebSocket code=1011 drops, which is what
+// shows up to candidates as "the AI is slow / keeps cutting out"). Google's own
+// migration guide points to gemini-3.1-flash-live-preview as the lower-latency
+// replacement. Override on Render with GEMINI_LIVE_MODEL if needed.
+const LIVE_MODEL = process.env.GEMINI_LIVE_MODEL || 'gemini-3.1-flash-live-preview'
 
 export async function POST(req: Request) {
   try {
@@ -30,20 +34,53 @@ export async function POST(req: Request) {
     const jobDescription = String(body.jobDescription || '').slice(0, 12000)
     const resumeText = String(body.resumeText || '').slice(0, 16000)
 
+    let priorQuestionsAsked: string[] = []
+    try {
+      await connectDB()
+      const sessionRecord = await InterviewSession.findOne({ sessionId: session.sid, userId: session.uid }).select('priorQuestionsAsked').lean()
+      priorQuestionsAsked = (sessionRecord?.priorQuestionsAsked || []) as string[]
+    } catch (historyError) {
+      console.warn('Could not load prior-question history for live token:', historyError)
+    }
+
+    const systemInstructionText = buildInterviewerInstruction(persona, track, level, jobDescription, resumeText, questionCount, priorQuestionsAsked)
+
     const expireTime = new Date(Date.now() + 30 * 60 * 1000).toISOString()
-    // Keep the ephemeral token constraints intentionally small. Google Live
-    // ephemeral tokens are safest when only the model/session-resumption and
-    // response modality are locked here; the browser supplies the conversational
-    // settings after the WebSocket is authenticated. Locking every Live config
-    // field in the token can make token creation fail as the API evolves.
-    // Do not embed a Bidi setup inside the ephemeral token. The current AuthToken
-    // API treats an embedded setup as the effective session configuration and can
-    // therefore ignore/reject the browser's setup. An unconstrained token lets the
-    // authenticated WebSocket provide the actual interviewer configuration.
+    // SECURITY: the ephemeral token's `liveConnectConstraints.config` locks the
+    // model, system instruction, and tools server-side. Without this, a candidate
+    // who intercepts their own ephemeral token (trivial — it's minted for their
+    // own browser) can open the WebSocket directly and send a replacement setup
+    // frame that overrides the interviewer persona/instructions or enables tools
+    // like codeExecution — a documented vulnerability class for Gemini Live apps
+    // that mint "Constrained" tokens without this field. Locking it here closes
+    // that path; the browser's own setup frame (see interview-call-room.tsx) is
+    // then advisory only and is ignored where it conflicts with this lock.
     const payload = {
       uses: 1,
       expireTime,
       newSessionExpireTime: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+      liveConnectConstraints: {
+        model: `models/${LIVE_MODEL}`,
+        config: {
+          responseModalities: ['AUDIO'],
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: persona === 'priya' ? 'Kore' : 'Puck' } } },
+          systemInstruction: { parts: [{ text: systemInstructionText }] },
+          inputAudioTranscription: { languageCodes: ['en-IN', 'en-US'], mode: 'SMART' },
+          outputAudioTranscription: {},
+          realtimeInputConfig: {
+            automaticActivityDetection: {
+              disabled: false,
+              startOfSpeechSensitivity: 'START_SENSITIVITY_HIGH',
+              endOfSpeechSensitivity: 'END_SENSITIVITY_HIGH',
+              prefixPaddingMs: 160,
+              silenceDurationMs: 1800,
+            },
+            activityHandling: 'START_OF_ACTIVITY_INTERRUPTS',
+            turnCoverage: 'TURN_INCLUDES_AUDIO_ACTIVITY_AND_ALL_VIDEO',
+          },
+          tools: [],
+        },
+      },
     }
 
     const response = await fetch('https://generativelanguage.googleapis.com/v1beta/auth_tokens', {
