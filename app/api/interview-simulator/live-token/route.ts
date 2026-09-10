@@ -4,7 +4,6 @@ import { INTERVIEW_COOKIE, verifyInterviewSession } from '@/lib/interview-securi
 import { rateLimit } from '@/lib/rate-limit'
 import { connectDB } from '@/lib/db'
 import { InterviewSession } from '@/models/InterviewSession'
-import { buildInterviewerInstruction } from '@/lib/interview-instruction'
 
 // gemini-2.5-flash-native-audio-preview-12-2025 has been unreliable in production
 // since ~2026-05-27 (frequent mid-turn WebSocket code=1011 drops, which is what
@@ -27,12 +26,9 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const persona: 'priya' | 'vikram' = session.persona
-    const track = session.track
-    const level = session.level
-    const questionCount = session.questionCount
-    const jobDescription = String(body.jobDescription || '').slice(0, 12000)
-    const resumeText = String(body.resumeText || '').slice(0, 16000)
+    void body // job description / resume text are no longer needed here — the browser
+    // builds the full system instruction itself (see interview-call-room.tsx)
+    // since this account's API can't lock it server-side yet (see note below).
 
     let priorQuestionsAsked: string[] = []
     try {
@@ -43,44 +39,19 @@ export async function POST(req: Request) {
       console.warn('Could not load prior-question history for live token:', historyError)
     }
 
-    const systemInstructionText = buildInterviewerInstruction(persona, track, level, jobDescription, resumeText, questionCount, priorQuestionsAsked)
-
     const expireTime = new Date(Date.now() + 30 * 60 * 1000).toISOString()
-    // SECURITY: the ephemeral token's `liveConnectConstraints.config` locks the
-    // model, system instruction, and tools server-side. Without this, a candidate
-    // who intercepts their own ephemeral token (trivial — it's minted for their
-    // own browser) can open the WebSocket directly and send a replacement setup
-    // frame that overrides the interviewer persona/instructions or enables tools
-    // like codeExecution — a documented vulnerability class for Gemini Live apps
-    // that mint "Constrained" tokens without this field. Locking it here closes
-    // that path; the browser's own setup frame (see interview-call-room.tsx) is
-    // then advisory only and is ignored where it conflicts with this lock.
+    // NOTE: this account's current auth_tokens API version rejects the
+    // `liveConnectConstraints` field ("Unknown name liveConnectConstraints ...
+    // Cannot find field") — confirmed against the live Render deployment — so
+    // the session config cannot be locked server-side yet on this account/API
+    // version. Falling back to the original unconstrained-token approach: the
+    // browser supplies the model/system-instruction/config after the socket is
+    // authenticated (see interview-call-room.tsx). Revisit locking this down
+    // once Google exposes liveConnectConstraints for this project/API version.
     const payload = {
       uses: 1,
       expireTime,
       newSessionExpireTime: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-      liveConnectConstraints: {
-        model: `models/${LIVE_MODEL}`,
-        config: {
-          responseModalities: ['AUDIO'],
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: persona === 'priya' ? 'Kore' : 'Puck' } } },
-          systemInstruction: { parts: [{ text: systemInstructionText }] },
-          inputAudioTranscription: { languageCodes: ['en-IN', 'en-US'], mode: 'SMART' },
-          outputAudioTranscription: {},
-          realtimeInputConfig: {
-            automaticActivityDetection: {
-              disabled: false,
-              startOfSpeechSensitivity: 'START_SENSITIVITY_HIGH',
-              endOfSpeechSensitivity: 'END_SENSITIVITY_HIGH',
-              prefixPaddingMs: 160,
-              silenceDurationMs: 1800,
-            },
-            activityHandling: 'START_OF_ACTIVITY_INTERRUPTS',
-            turnCoverage: 'TURN_INCLUDES_AUDIO_ACTIVITY_AND_ALL_VIDEO',
-          },
-          tools: [],
-        },
-      },
     }
 
     const response = await fetch('https://generativelanguage.googleapis.com/v1beta/auth_tokens', {
@@ -122,7 +93,7 @@ export async function POST(req: Request) {
       console.warn('Could not mark interview session live:', dbError)
     }
 
-    return NextResponse.json({ token, model: LIVE_MODEL, expiresAt: expireTime })
+    return NextResponse.json({ token, model: LIVE_MODEL, expiresAt: expireTime, priorQuestions: priorQuestionsAsked })
   } catch (error) {
     console.error('Live token route failed:', error)
     return NextResponse.json({ error: 'Failed to initialize the real-time AI interviewer.' }, { status: 500 })

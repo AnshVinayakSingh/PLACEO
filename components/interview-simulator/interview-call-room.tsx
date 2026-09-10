@@ -478,7 +478,7 @@ export function InterviewCallRoom({
             responseModalities: ['AUDIO'],
             speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: persona === 'priya' ? 'Kore' : 'Puck' } } },
           },
-          systemInstruction: { parts: [{ text: buildInterviewerInstruction(persona, track, level, jobDescription, resumeText, questionCount) }] },
+          systemInstruction: { parts: [{ text: buildInterviewerInstruction(persona, track, level, jobDescription, resumeText, questionCount, tokenData.priorQuestions || []) }] },
           inputAudioTranscription: { languageCodes: ['en-IN', 'en-US'], mode: 'SMART' },
           outputAudioTranscription: {},
           realtimeInputConfig: {
