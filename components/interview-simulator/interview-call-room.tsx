@@ -561,7 +561,7 @@ export function InterviewCallRoom({
             const questionForAnalysis = dialogueRef.current.filter((item) => item.role === 'interviewer').slice(-1)[0]?.text || 'Live adaptive interview question'
             addDialogue('candidate', candidate)
             const runShadow = () => void analyzeCandidateTurn(questionForAnalysis, candidate)
-            if ('requestIdleCallback' in window) window.requestIdleCallback(runShadow, { timeout: 1200 })
+            if (typeof (window as any).requestIdleCallback === 'function') (window as any).requestIdleCallback(runShadow, { timeout: 1200 })
             else window.setTimeout(runShadow, 0)
             candidateTurnCountRef.current += 1
             setTurnCount(candidateTurnCountRef.current)

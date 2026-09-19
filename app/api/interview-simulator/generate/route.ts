@@ -25,6 +25,7 @@ interface GenerateRequest {
   resumeText?: string
   level: number
   questionCount: number
+  persona?: 'priya' | 'vikram'
 }
 
 const SYSTEM = `You are PLACEO's adaptive interview architect. You create the opening question for a live, human-like interview.

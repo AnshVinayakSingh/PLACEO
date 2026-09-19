@@ -198,7 +198,7 @@ export default function AiMentorChatPage() {
 
   return (
     <PageShell title="AI Mentor Chat" description="Your always-on career mentor, powered by Gemini.">
-      <div className="glass-strong flex h-[70vh] min-h-[480px] flex-col overflow-hidden rounded-2xl">
+      <div className="glass-strong flex h-[calc(100dvh-12.5rem)] min-h-[360px] flex-col overflow-hidden rounded-2xl sm:h-[calc(100dvh-11rem)]">
         {/* Top bar: history + new chat */}
         <div className="relative flex items-center justify-between border-b border-border px-4 py-2.5 sm:px-6">
           <button
@@ -414,6 +414,7 @@ export default function AiMentorChatPage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleTextareaKeyDown}
+            onFocus={() => setTimeout(() => textareaRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' }), 250)}
             placeholder="Ask your AI mentor anything... (Shift+Enter for a new line)"
             disabled={loading}
             rows={1}

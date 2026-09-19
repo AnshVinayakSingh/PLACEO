@@ -134,7 +134,11 @@ export async function POST(req: Request) {
     try {
       await connectDB()
       const fullConversation = [...messages, { role: 'model' as const, text: result.reply }]
-      const title = messages[0]?.text?.slice(0, 60) || 'New chat'
+      const firstUserMessage = messages.find((m) => m.role === 'user')?.text || ''
+      const title = firstUserMessage
+        .replace(/^Replying to this earlier point:\s*"[^"]*"\s*/i, '') // strip reply-quote prefix if present
+        .trim()
+        .slice(0, 60) || 'New chat'
 
       if (sessionId) {
         await ChatSession.findOneAndUpdate(
