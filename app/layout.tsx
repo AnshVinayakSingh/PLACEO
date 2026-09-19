@@ -1,5 +1,6 @@
 import { Analytics } from '@vercel/analytics/next'
 import { SmoothScrollProvider } from '@/components/smooth-scroll-provider'
+import { GDInviteProvider } from '@/components/gd-simulator/gd-invite-provider'
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 import { Inter, Space_Grotesk } from 'next/font/google'
@@ -55,6 +56,7 @@ export default function RootLayout({
     >
       <body className="bg-background antialiased">
         <SmoothScrollProvider>{children}</SmoothScrollProvider>
+        <GDInviteProvider />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

@@ -31,6 +31,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ roomId:
       accepted: accept,
     })
 
+    if (accept && room.status === 'active') {
+      publishToUsers(otherMemberIds, 'gd-member-joined', {
+        roomId: String(room._id),
+        member: { userId: session.userId, name: member.name },
+      })
+    }
+
     return NextResponse.json({ success: true, room })
   } catch (err) {
     console.error('GD invite respond error:', err)

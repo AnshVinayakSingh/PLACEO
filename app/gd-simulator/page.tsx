@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'motion/react'
 import {
   Bot,
@@ -19,7 +20,7 @@ import { PageShell } from '@/components/dashboard/page-shell'
 import { GDCallRoom, type GDTranscriptEntry } from '@/components/gd-simulator/gd-call-room'
 import type { GDParticipant } from '@/lib/gd-instruction'
 
-type ViewState = 'mode-select' | 'solo-setup' | 'create-room' | 'lobby' | 'call' | 'feedback'
+type ViewState = 'mode-select' | 'solo-setup' | 'create-room' | 'lobby' | 'call' | 'feedback' | 'gd-ended'
 
 interface GDMemberView {
   userId: string
@@ -47,14 +48,6 @@ interface FriendOption {
   avatarUrl: string
 }
 
-interface IncomingInvite {
-  roomId: string
-  hostName: string
-  companyName: string
-  jobRole: string
-  memberCount: number
-}
-
 interface GDFeedbackParticipant {
   name: string
   contributionScore: number
@@ -69,7 +62,7 @@ interface GDFeedback {
   participantFeedback: GDFeedbackParticipant[]
 }
 
-export default function GdSimulatorPage() {
+function GdSimulatorInner() {
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string } | null>(null)
   const [view, setView] = useState<ViewState>('mode-select')
   const [companyName, setCompanyName] = useState('')
@@ -78,11 +71,11 @@ export default function GdSimulatorPage() {
   const [room, setRoom] = useState<GDRoomView | null>(null)
   const [friends, setFriends] = useState<FriendOption[]>([])
   const [showInvitePicker, setShowInvitePicker] = useState(false)
-  const [incomingInvite, setIncomingInvite] = useState<IncomingInvite | null>(null)
   const [feedback, setFeedback] = useState<GDFeedback | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const eventSourceRef = useRef<EventSource | null>(null)
   const roomIdRef = useRef<string | null>(null)
+  const searchParams = useSearchParams()
+  const router = useRouter()
 
   useEffect(() => {
     roomIdRef.current = room?._id || null
@@ -107,16 +100,36 @@ export default function GdSimulatorPage() {
     } catch {}
   }, [])
 
-  // Real-time invite popups + room updates
+  // Entering via an accepted invite link (?joinRoom=<id>) — works whether the
+  // room is still waiting in its lobby, already live (mid-call join), or has
+  // already finished by the time this person gets here.
+  useEffect(() => {
+    const joinRoomId = searchParams.get('joinRoom')
+    if (!joinRoomId) return
+    router.replace('/gd-simulator')
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/gd-simulator/rooms/${joinRoomId}`)
+        const data = await res.json()
+        if (!res.ok || !data.room) {
+          setErrorMsg(data.error || 'Could not open that GD room.')
+          return
+        }
+        setRoom(data.room)
+        if (data.room.status === 'completed' || data.room.status === 'cancelled') setView('gd-ended')
+        else if (data.room.status === 'active') setView('call')
+        else setView('lobby')
+      } catch {
+        setErrorMsg('Could not open that GD room.')
+      }
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+
+  // Real-time room updates (invite popups themselves are shown globally by GDInviteProvider)
   useEffect(() => {
     if (!currentUser) return
     const es = new EventSource('/api/gd-simulator/events')
-    eventSourceRef.current = es
-    es.addEventListener('gd-invite', (e) => {
-      try {
-        setIncomingInvite(JSON.parse((e as MessageEvent).data))
-      } catch {}
-    })
     es.addEventListener('room-updated', () => {
       if (roomIdRef.current) void refreshRoom(roomIdRef.current)
     })
@@ -188,24 +201,6 @@ export default function GdSimulatorPage() {
     }
   }
 
-  const respondToInvite = async (accept: boolean) => {
-    if (!incomingInvite) return
-    const { roomId } = incomingInvite
-    setIncomingInvite(null)
-    try {
-      const res = await fetch(`/api/gd-simulator/rooms/${roomId}/respond`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accept }),
-      })
-      const data = await res.json()
-      if (accept && res.ok && data.room) {
-        setRoom(data.room)
-        setView('lobby')
-      }
-    } catch {}
-  }
-
   const startGD = async () => {
     if (!room) return
     try {
@@ -258,41 +253,7 @@ export default function GdSimulatorPage() {
       title="AI Group Discussion Simulator"
       description="Practice with AI participants, or bring your friends into a live moderated GD room."
     >
-      {/* PUBG-style incoming invite popup — visible from anywhere in this page */}
-      <AnimatePresence>
-        {incomingInvite && (
-          <motion.div
-            initial={{ opacity: 0, y: -30, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.9 }}
-            className="fixed left-1/2 top-6 z-50 w-[92%] max-w-sm -translate-x-1/2 rounded-2xl border border-cyan-400/40 bg-slate-950/95 p-4 shadow-2xl shadow-cyan-500/20 backdrop-blur-xl"
-          >
-            <div className="flex items-center gap-3">
-              <span className="brand-gradient flex size-11 shrink-0 items-center justify-center rounded-xl text-white">
-                <Users className="size-5" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-white">GD Invite from {incomingInvite.hostName}</p>
-                <p className="truncate text-xs text-slate-400">{incomingInvite.jobRole} · {incomingInvite.companyName}</p>
-              </div>
-            </div>
-            <div className="mt-3 flex gap-2">
-              <button
-                onClick={() => respondToInvite(true)}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-500 px-3 py-2 text-xs font-bold text-white transition-transform hover:scale-[1.02]"
-              >
-                <Check className="size-3.5" /> Accept
-              </button>
-              <button
-                onClick={() => respondToInvite(false)}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-slate-700 px-3 py-2 text-xs font-bold text-white transition-transform hover:scale-[1.02]"
-              >
-                <X className="size-3.5" /> Reject
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Note: the invite popup itself is shown globally (any page) by GDInviteProvider in the root layout. */}
 
       {errorMsg && (
         <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2.5 text-xs text-rose-300">
@@ -494,6 +455,25 @@ export default function GdSimulatorPage() {
         />
       )}
 
+      {/* GD already ended by the time this person joined */}
+      {view === 'gd-ended' && (
+        <div className="glass mx-auto max-w-md rounded-3xl p-8 text-center">
+          <span className="brand-gradient mx-auto flex size-12 items-center justify-center rounded-xl text-white">
+            <MessagesSquare className="size-6" />
+          </span>
+          <h2 className="mt-4 text-lg font-bold">This GD has ended</h2>
+          <p className="mt-2 text-xs text-muted-foreground">
+            By the time you joined, this discussion had already wrapped up. Start a new one instead.
+          </p>
+          <button
+            onClick={resetToStart}
+            className="brand-gradient glow-ring mt-6 flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold text-primary-foreground"
+          >
+            <Sparkles className="size-4" /> Start a New GD
+          </button>
+        </div>
+      )}
+
       {/* 5. Feedback */}
       {view === 'feedback' && (
         <div className="glass mx-auto max-w-xl rounded-3xl p-8">
@@ -541,5 +521,13 @@ export default function GdSimulatorPage() {
         </div>
       )}
     </PageShell>
+  )
+}
+
+export default function GdSimulatorPage() {
+  return (
+    <Suspense fallback={null}>
+      <GdSimulatorInner />
+    </Suspense>
   )
 }

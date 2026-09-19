@@ -631,8 +631,9 @@ export function GDCallRoom({
     const sendTextTurnToGemini = (speakerName: string, text: string) => {
       const ws = websocketRef.current
       if (!ws || ws.readyState !== WebSocket.OPEN || !liveReadyRef.current) return
+      const turnText = speakerName === 'SYSTEM' ? text : `${speakerName} says: ${text}`
       try {
-        ws.send(JSON.stringify({ clientContent: { turns: [{ role: 'user', parts: [{ text: `${speakerName} says: ${text}` }] }], turnComplete: true } }))
+        ws.send(JSON.stringify({ clientContent: { turns: [{ role: 'user', parts: [{ text: turnText }] }], turnComplete: true } }))
       } catch {}
     }
 
@@ -710,6 +711,26 @@ export function GDCallRoom({
             addTranscript(data.speakerName, data.text, offTopic)
             if (data.speakerName === 'GD Coach AI') pulseAiSpeaking()
             else if (isHost) sendTextTurnToGemini(data.speakerName, data.text)
+          } catch {}
+        })
+        // Someone accepted an invite AFTER the GD was already live — connect to
+        // them immediately, and (host only) have the AI pause to welcome them
+        // with a quick catch-up before continuing.
+        es.addEventListener('gd-member-joined', (e) => {
+          try {
+            const data = JSON.parse((e as MessageEvent).data)
+            if (data.roomId !== roomId || !data.member?.userId) return
+            const newUserId = data.member.userId as string
+            if (newUserId === currentUserId || peerConnectionsRef.current.has(newUserId)) return
+            const isInitiator = currentUserId < newUserId
+            createPeerConnection(newUserId, isInitiator)
+            if (isHost) {
+              const recap = transcriptRef.current.slice(-8).map((t) => `${t.speaker}: ${t.text}`).join('\n') || 'The discussion has just begun.'
+              sendTextTurnToGemini(
+                'SYSTEM',
+                `${data.member.name} has just joined the discussion mid-way. Pause briefly, warmly welcome them by name, give a 2-3 sentence recap of what's been discussed so far using this recent context, then continue the discussion and give them a chance to speak too.\n\nRecent context:\n${recap}`,
+              )
+            }
           } catch {}
         })
 
