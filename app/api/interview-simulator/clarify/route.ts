@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { INTERVIEW_COOKIE, verifyInterviewSession } from '@/lib/interview-security'
 import { rateLimit } from '@/lib/rate-limit'
 
-const MODEL_FALLBACK_CHAIN = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-3.6-flash']
+const MODEL_FALLBACK_CHAIN = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-3.6-flash', 'gemini-2.5-flash-lite', 'gemini-3.1-flash-lite']
 
 export async function POST(req: Request) {
   try {

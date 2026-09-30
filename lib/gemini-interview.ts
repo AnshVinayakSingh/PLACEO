@@ -2,7 +2,7 @@
 // Mirrors the fallback-chain pattern already used in app/api/chat/route.ts so behavior
 // (and reliability under Gemini's flaky alias routing) stays consistent across the app.
 
-const MODEL_FALLBACK_CHAIN = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-3.6-flash']
+const MODEL_FALLBACK_CHAIN = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-3.6-flash', 'gemini-2.5-flash-lite', 'gemini-3.1-flash-lite']
 
 export type GeminiJSONResult<T> =
   | { ok: true; data: T; modelUsed: string }

@@ -39,7 +39,7 @@ type ChatMessage = { role: 'user' | 'model'; text: string }
 // Gemini's floating aliases occasionally route to an unhealthy backing build and
 // return errors for a fraction of requests. Trying a short fallback chain of
 // distinct model names fixes the "sometimes just doesn't respond" symptom.
-const MODEL_FALLBACK_CHAIN = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-3.6-flash']
+const MODEL_FALLBACK_CHAIN = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-3.6-flash', 'gemini-2.5-flash-lite', 'gemini-3.1-flash-lite']
 
 async function callGemini(apiKey: string, contents: unknown[]) {
   let lastErrorText = ''

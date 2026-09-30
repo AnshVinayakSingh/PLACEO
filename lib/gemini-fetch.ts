@@ -3,7 +3,7 @@
 // if one model errors / is rate-limited / returns an empty reply, try the next model.
 // Returns a normal Response, so existing `res.ok`, `res.status`, `res.json()` code keeps working.
 
-const MODEL_FALLBACK_CHAIN = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-3.6-flash']
+const MODEL_FALLBACK_CHAIN = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-3.6-flash', 'gemini-2.5-flash-lite', 'gemini-3.1-flash-lite']
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
