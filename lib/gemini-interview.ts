@@ -2,7 +2,9 @@
 // Mirrors the fallback-chain pattern already used in app/api/chat/route.ts so behavior
 // (and reliability under Gemini's flaky alias routing) stays consistent across the app.
 
-const MODEL_FALLBACK_CHAIN = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-3.6-flash', 'gemini-2.5-flash-lite', 'gemini-3.1-flash-lite']
+import { GEMINI_MODEL_CHAIN, GEMINI_TIMEOUT_MS, tuneGenerationConfig } from '@/lib/gemini-fetch'
+
+const MODEL_FALLBACK_CHAIN = GEMINI_MODEL_CHAIN
 
 export type GeminiJSONResult<T> =
   | { ok: true; data: T; modelUsed: string }
@@ -47,12 +49,13 @@ export async function callGeminiForJSON<T>(
           body: JSON.stringify({
             system_instruction: { parts: [{ text: systemInstruction }] },
             contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-            generationConfig: {
+            generationConfig: tuneGenerationConfig(model, {
               temperature: opts?.temperature ?? 0.8,
               maxOutputTokens: opts?.maxOutputTokens ?? 4096,
               responseMimeType: 'application/json',
-            },
+            }),
           }),
+          signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
         }
       )
 
@@ -60,7 +63,6 @@ export async function callGeminiForJSON<T>(
         lastStatus = res.status
         lastErrorText = await res.text()
         console.error(`[gemini-interview] ${model} HTTP ${res.status}:`, lastErrorText)
-        if (res.status === 429) return { ok: false, status: 429, errorText: lastErrorText }
         continue
       }
 

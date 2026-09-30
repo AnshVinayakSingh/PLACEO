@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 import { connectDB } from '@/lib/db'
 import { ChatSession } from '@/models/ChatSession'
+import { GEMINI_MODEL_CHAIN, GEMINI_TIMEOUT_MS, tuneGenerationConfig } from '@/lib/gemini-fetch'
 
 const SYSTEM_PROMPT = `You are the PLACEO AI Mentor — a warm, genuinely caring companion and mentor built into the PLACEO app. Think "the one friend/senior who always has your back, on anything," not a narrow corporate chatbot.
 
@@ -39,7 +40,7 @@ type ChatMessage = { role: 'user' | 'model'; text: string }
 // Gemini's floating aliases occasionally route to an unhealthy backing build and
 // return errors for a fraction of requests. Trying a short fallback chain of
 // distinct model names fixes the "sometimes just doesn't respond" symptom.
-const MODEL_FALLBACK_CHAIN = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-3.6-flash', 'gemini-2.5-flash-lite', 'gemini-3.1-flash-lite']
+const MODEL_FALLBACK_CHAIN = GEMINI_MODEL_CHAIN
 
 async function callGemini(apiKey: string, contents: unknown[]) {
   let lastErrorText = ''
@@ -55,8 +56,9 @@ async function callGemini(apiKey: string, contents: unknown[]) {
           body: JSON.stringify({
             system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
             contents,
-            generationConfig: { temperature: 0.85, maxOutputTokens: 4096 },
+            generationConfig: tuneGenerationConfig(model, { temperature: 0.85, maxOutputTokens: 4096 }),
           }),
+          signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS + 10_000),
         },
       )
 
@@ -64,7 +66,6 @@ async function callGemini(apiKey: string, contents: unknown[]) {
         lastStatus = res.status
         lastErrorText = await res.text()
         console.error(`Gemini API error on ${model}:`, res.status, lastErrorText)
-        if (res.status === 429) return { ok: false as const, status: 429, errorText: lastErrorText }
         continue // try the next model in the chain
       }
 

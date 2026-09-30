@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { INTERVIEW_COOKIE, verifyInterviewSession } from '@/lib/interview-security'
 import { rateLimit } from '@/lib/rate-limit'
+import { GEMINI_MODEL_CHAIN, GEMINI_TIMEOUT_MS, tuneGenerationConfig } from '@/lib/gemini-fetch'
 
-const MODEL_FALLBACK_CHAIN = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-3.6-flash', 'gemini-2.5-flash-lite', 'gemini-3.1-flash-lite']
+const MODEL_FALLBACK_CHAIN = GEMINI_MODEL_CHAIN
 
 export async function POST(req: Request) {
   try {
@@ -37,8 +38,9 @@ Respond as the interviewer in 1 to 2 crisp, natural, conversational sentences. C
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                generationConfig: { temperature: 0.7, maxOutputTokens: 150 },
+                generationConfig: tuneGenerationConfig(model, { temperature: 0.7, maxOutputTokens: 150 }),
               }),
+              signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
             }
           )
           if (geminiRes.ok) {
