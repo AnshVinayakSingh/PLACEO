@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
+import { geminiFetch } from '@/lib/gemini-fetch'
 
 const QUESTION_SCHEMA = {
   type: 'OBJECT',
@@ -64,7 +65,7 @@ Rules:
 - Do not repeat the same question phrasing across the set.
 - Keep each question and each option concise (fit on a few lines).`
 
-    const res = await fetch(
+    const res = await geminiFetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',

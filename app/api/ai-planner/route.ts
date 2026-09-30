@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
+import { geminiFetch } from '@/lib/gemini-fetch'
 
 type BusySlot = { label: string; start: string; end: string }
 
@@ -171,7 +172,7 @@ export async function POST(req: Request) {
       required: ['weekday', 'weekend', 'insights'],
     }
 
-    const res = await fetch(
+    const res = await geminiFetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',

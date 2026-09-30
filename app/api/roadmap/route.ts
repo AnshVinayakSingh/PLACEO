@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
+import { geminiFetch } from '@/lib/gemini-fetch'
 
 type RoadmapRequest = { skill: string }
 
@@ -103,7 +104,7 @@ export async function POST(req: Request) {
       required: ['skillName', 'overview', 'totalDuration', 'phases', 'interviewFocus', 'proTips'],
     }
 
-    const res = await fetch(
+    const res = await geminiFetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
