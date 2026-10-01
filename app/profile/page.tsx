@@ -27,8 +27,8 @@ const stats = [
 ]
 
 const achievements = [
-  { title: '30-Day Streak', desc: 'Studied consistently for 30 days', color: 'oklch(0.75 0.15 220)' },
-  { title: 'DSA Master', desc: 'Completed 200+ DSA problems', color: 'oklch(0.62 0.24 300)' },
+  { title: '30-Day Streak', desc: 'Studied consistently for 30 days', color: 'oklch(0.83 0.09 85)' },
+  { title: 'DSA Master', desc: 'Completed 200+ DSA problems', color: 'oklch(0.6 0.16 28)' },
   { title: 'Interview Ready', desc: 'Scored 85+ in 5 mock interviews', color: 'oklch(0.7 0.19 60)' },
   { title: 'Top 10', desc: 'Reached top 10 on leaderboard', color: 'oklch(0.85 0.16 90)' },
 ]
@@ -66,9 +66,9 @@ export default function ProfilePage() {
 
   return (
     <PageShell title="Profile" description="Your career prep journey at a glance.">
-      <div className="glass rounded-2xl p-6 sm:p-8">
+      <div className="glass rounded-lg p-6 sm:p-8">
         <div className="flex flex-col items-center gap-5 sm:flex-row">
-          <div className="glow-ring flex size-[88px] items-center justify-center overflow-hidden rounded-2xl bg-secondary">
+          <div className="glow-ring flex size-[88px] items-center justify-center overflow-hidden rounded-lg bg-secondary">
             {profile?.avatarUrl ? (
               <Image
                 src={profile.avatarUrl}
@@ -163,7 +163,7 @@ export default function ProfilePage() {
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: i * 0.06 }}
-              className="glass rounded-2xl p-5"
+              className="glass rounded-lg p-5"
             >
               <span className="flex size-10 items-center justify-center rounded-xl bg-brand-blue/15 text-brand-cyan">
                 <Icon className="size-5" />
@@ -175,7 +175,7 @@ export default function ProfilePage() {
         })}
       </div>
 
-      <div className="glass mt-4 rounded-2xl p-6">
+      <div className="glass mt-4 rounded-lg p-6">
         <h3 className="font-display flex items-center gap-2 text-sm font-semibold">
           <Award className="size-4 text-brand-cyan" /> Achievements
         </h3>

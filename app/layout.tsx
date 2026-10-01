@@ -3,18 +3,33 @@ import { SmoothScrollProvider } from '@/components/smooth-scroll-provider'
 import { GDInviteProvider } from '@/components/gd-simulator/gd-invite-provider'
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
-import { Inter, Space_Grotesk } from 'next/font/google'
+import { Onest, Bricolage_Grotesque, Instrument_Serif, IBM_Plex_Mono } from 'next/font/google'
 import './globals.css'
 
-const inter = Inter({
+const onest = Onest({
   subsets: ['latin'],
-  variable: '--font-inter',
+  variable: '--font-onest',
   display: 'swap',
 })
 
-const spaceGrotesk = Space_Grotesk({
+const bricolage = Bricolage_Grotesque({
   subsets: ['latin'],
-  variable: '--font-space-grotesk',
+  variable: '--font-bricolage',
+  display: 'swap',
+})
+
+const instrument = Instrument_Serif({
+  subsets: ['latin'],
+  weight: '400',
+  style: ['normal', 'italic'],
+  variable: '--font-instrument',
+  display: 'swap',
+})
+
+const plexMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-plex-mono',
   display: 'swap',
 })
 
@@ -22,7 +37,6 @@ export const metadata: Metadata = {
   title: 'PLACEO — Your AI Career Operating System',
   description:
     'PLACEO is the AI career operating system for students. Build an AI roadmap, simulate interviews, analyze your skills and resume, and land your dream job faster.',
-  generator: 'v0.app',
   keywords: [
     'AI career platform',
     'student careers',
@@ -41,7 +55,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   colorScheme: 'dark',
-  themeColor: '#0a0a16',
+  themeColor: '#171513',
 }
 
 export default function RootLayout({
@@ -52,7 +66,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`dark ${inter.variable} ${spaceGrotesk.variable}`}
+      className={`dark ${onest.variable} ${bricolage.variable} ${instrument.variable} ${plexMono.variable}`}
     >
       <body className="bg-background antialiased">
         <SmoothScrollProvider>{children}</SmoothScrollProvider>

@@ -22,7 +22,7 @@ function StatValue({ value, suffix, isFloat }: { value: number; suffix: string; 
   const { ref, value: animated } = useCountUp(value)
   const display = isFloat ? animated.toFixed(0) : Math.round(animated).toString()
   return (
-    <span ref={ref} className="font-display text-3xl font-bold tabular-nums tracking-tight">
+    <span ref={ref} className="font-display text-4xl font-medium tabular-nums tracking-tight">
       {display}
       <span className="text-xl text-muted-foreground">{suffix}</span>
     </span>
@@ -41,7 +41,7 @@ export function StatCards() {
 
   if (!skills) {
     return (
-      <div className="glass flex h-28 items-center justify-center rounded-2xl">
+      <div className="glass flex h-28 items-center justify-center rounded-lg">
         <Loader2 className="size-5 animate-spin text-muted-foreground" />
       </div>
     )
@@ -61,7 +61,7 @@ export function StatCards() {
       value: avgAccuracy,
       suffix: '%',
       icon: Target,
-      accent: 'oklch(0.62 0.2 265)',
+      accent: 'var(--primary)',
     },
     {
       key: 'answered',
@@ -69,7 +69,7 @@ export function StatCards() {
       value: totalQuestions,
       suffix: '',
       icon: CheckCircle2,
-      accent: 'oklch(0.7 0.19 35)',
+      accent: 'var(--primary)',
     },
     {
       key: 'practiced',
@@ -77,7 +77,7 @@ export function StatCards() {
       value: attempted.length,
       suffix: `/${skills.length}`,
       icon: ListChecks,
-      accent: 'oklch(0.65 0.24 300)',
+      accent: 'var(--primary)',
     },
   ]
 
@@ -92,20 +92,8 @@ export function StatCards() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: i * 0.07 }}
           >
-            <TiltCard className="glass glass-hover group relative block overflow-hidden rounded-2xl p-5">
-              <div
-                className="pointer-events-none absolute -right-8 -top-8 size-24 rounded-full opacity-20 blur-2xl transition-opacity group-hover:opacity-40"
-                style={{ background: stat.accent }}
-              />
-              <span
-                className="flex size-11 items-center justify-center rounded-xl"
-                style={{
-                  background: `color-mix(in oklch, ${stat.accent} 22%, transparent)`,
-                  color: stat.accent,
-                }}
-              >
-                <Icon className="size-5" />
-              </span>
+            <TiltCard className="glass glass-hover group relative block overflow-hidden rounded-lg p-5">
+              <Icon className="size-5 text-primary" />
               <div className="mt-4">
                 <StatValue value={stat.value} suffix={stat.suffix} />
               </div>

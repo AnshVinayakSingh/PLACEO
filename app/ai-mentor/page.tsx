@@ -198,7 +198,7 @@ export default function AiMentorChatPage() {
 
   return (
     <PageShell title="AI Mentor Chat" description="Your always-on career mentor, powered by Gemini.">
-      <div className="glass-strong flex h-[calc(100dvh-12.5rem)] min-h-[360px] flex-col overflow-hidden rounded-2xl sm:h-[calc(100dvh-11rem)]">
+      <div className="glass-strong flex h-[calc(100dvh-12.5rem)] min-h-[360px] flex-col overflow-hidden rounded-lg sm:h-[calc(100dvh-11rem)]">
         {/* Top bar: history + new chat */}
         <div className="relative flex items-center justify-between border-b border-border px-4 py-2.5 sm:px-6">
           <button
@@ -288,7 +288,7 @@ export default function AiMentorChatPage() {
                       onKeyDown={(e) => handleEditKeyDown(e, i)}
                       rows={1}
                       autoFocus
-                      className="glass w-full resize-none rounded-2xl px-4 py-2.5 text-sm leading-relaxed outline-none focus:ring-2 focus:ring-ring/60"
+                      className="glass w-full resize-none rounded-lg px-4 py-2.5 text-sm leading-relaxed outline-none focus:ring-2 focus:ring-ring/60"
                     />
                     <div className="mt-1.5 flex items-center justify-end gap-2">
                       <button
@@ -309,7 +309,7 @@ export default function AiMentorChatPage() {
                 ) : (
                   <>
                     <div
-                      className={`whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                      className={`whitespace-pre-wrap rounded-lg px-4 py-2.5 text-sm leading-relaxed ${
                         m.role === 'user' ? 'bg-brand-blue/15 text-foreground' : 'glass text-foreground'
                       }`}
                     >
@@ -362,7 +362,7 @@ export default function AiMentorChatPage() {
               <span className="brand-gradient glow-ring flex size-8 shrink-0 items-center justify-center rounded-full text-primary-foreground">
                 <Bot className="size-4" />
               </span>
-              <div className="glass flex items-center gap-1.5 rounded-2xl px-4 py-3">
+              <div className="glass flex items-center gap-1.5 rounded-lg px-4 py-3">
                 <Loader2 className="size-3.5 animate-spin text-brand-cyan" />
                 <span className="text-xs text-muted-foreground">Thinking...</span>
               </div>

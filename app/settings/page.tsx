@@ -103,7 +103,7 @@ export default function SettingsPage() {
         </Link>
       }
     >
-      <div className="glass overflow-hidden rounded-2xl">
+      <div className="glass overflow-hidden rounded-lg">
         <div className="flex overflow-x-auto border-b border-border">
           {tabs.map((t) => {
             const Icon = t.icon
@@ -254,7 +254,7 @@ export default function SettingsPage() {
                   ].map((n) => (
                     <label key={n} className="glass flex items-center justify-between rounded-xl px-4 py-3">
                       <span className="text-sm">{n}</span>
-                      <input type="checkbox" defaultChecked className="size-4 accent-[oklch(0.62_0.2_265)]" />
+                      <input type="checkbox" defaultChecked className="size-4 accent-[var(--primary)]" />
                     </label>
                   ))}
                   <p className="text-xs text-muted-foreground">

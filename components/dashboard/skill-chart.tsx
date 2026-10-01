@@ -16,7 +16,7 @@ function ChartTooltip({
   if (!active || !payload?.length) return null
   const s = payload[0].payload
   return (
-    <div className="glass-strong rounded-xl px-3 py-2 text-xs shadow-xl">
+    <div className="glass-strong rounded-xl px-3 py-2 text-xs ">
       <p className="mb-1 font-medium text-foreground">{s.skill}</p>
       <p className="text-muted-foreground">
         {s.questionsAnswered > 0 ? (
@@ -43,7 +43,7 @@ export function SkillChart() {
   }, [])
 
   return (
-    <div className="glass flex h-full flex-col rounded-2xl p-5 md:p-6">
+    <div className="glass flex h-full flex-col rounded-lg p-5 md:p-6">
       <div className="mb-4">
         <h3 className="font-display text-lg font-semibold">Skill Accuracy</h3>
         <p className="text-sm text-muted-foreground">Based on your actual quiz attempts</p>
@@ -63,21 +63,21 @@ export function SkillChart() {
         <div className="h-64 w-full md:h-72">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={skills} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.98 0.02 275 / 8%)" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.95 0.015 85 / 8%)" vertical={false} />
               <XAxis
                 dataKey="skill"
-                tick={{ fill: 'oklch(0.72 0.03 275)', fontSize: 11 }}
+                tick={{ fill: 'oklch(0.7 0.012 80)', fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
               />
               <YAxis
-                tick={{ fill: 'oklch(0.72 0.03 275)', fontSize: 11 }}
+                tick={{ fill: 'oklch(0.7 0.012 80)', fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
                 domain={[0, 100]}
               />
-              <Tooltip content={<ChartTooltip />} cursor={{ fill: 'oklch(0.98 0.02 275 / 6%)' }} />
-              <Bar dataKey="accuracy" fill="oklch(0.62 0.2 265)" radius={[6, 6, 0, 0]} animationDuration={900} />
+              <Tooltip content={<ChartTooltip />} cursor={{ fill: 'oklch(0.95 0.015 85 / 6%)' }} />
+              <Bar dataKey="accuracy" fill="var(--primary)" radius={[6, 6, 0, 0]} animationDuration={900} />
             </BarChart>
           </ResponsiveContainer>
         </div>

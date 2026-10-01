@@ -82,7 +82,7 @@ export function Pricing() {
             <Reveal key={plan.name} delay={i * 0.08} className="h-full">
               <div
                 className={cn(
-                  'relative flex h-full flex-col rounded-3xl p-8 transition-all duration-300',
+                  'relative flex h-full flex-col rounded-xl p-8 transition-all duration-300',
                   plan.popular
                     ? 'glass-strong glow-ring lg:-translate-y-4 lg:scale-[1.02]'
                     : 'glass hover:-translate-y-1',

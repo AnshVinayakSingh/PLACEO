@@ -268,7 +268,7 @@ function GdSimulatorInner() {
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             onClick={() => setView('solo-setup')}
-            className="glass rounded-2xl p-6 text-left transition-colors hover:ring-2 hover:ring-brand-purple/40"
+            className="glass rounded-lg p-6 text-left transition-colors hover:ring-2 hover:ring-brand-purple/40"
           >
             <span className="brand-gradient flex size-12 items-center justify-center rounded-xl text-white">
               <Bot className="size-6" />
@@ -283,7 +283,7 @@ function GdSimulatorInner() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.06 }}
             onClick={() => setView('create-room')}
-            className="glass rounded-2xl p-6 text-left transition-colors hover:ring-2 hover:ring-brand-purple/40"
+            className="glass rounded-lg p-6 text-left transition-colors hover:ring-2 hover:ring-brand-purple/40"
           >
             <span className="brand-gradient flex size-12 items-center justify-center rounded-xl text-white">
               <Users className="size-6" />
@@ -298,7 +298,7 @@ function GdSimulatorInner() {
 
       {/* 2. Setup form (shared by solo + create-room) */}
       {(view === 'solo-setup' || view === 'create-room') && (
-        <div className="glass mx-auto max-w-lg rounded-3xl p-8">
+        <div className="glass mx-auto max-w-lg rounded-xl p-8">
           <span className="brand-gradient flex size-12 items-center justify-center rounded-xl text-white">
             <MessagesSquare className="size-6" />
           </span>
@@ -349,7 +349,7 @@ function GdSimulatorInner() {
 
       {/* 3. Multiplayer lobby */}
       {view === 'lobby' && room && (
-        <div className="glass mx-auto max-w-xl rounded-3xl p-8">
+        <div className="glass mx-auto max-w-xl rounded-xl p-8">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-bold">GD Room Lobby</h2>
@@ -408,7 +408,7 @@ function GdSimulatorInner() {
                   initial={{ scale: 0.95, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   onClick={(e) => e.stopPropagation()}
-                  className="glass max-h-[70vh] w-full max-w-sm overflow-y-auto rounded-2xl p-5"
+                  className="glass max-h-[70vh] w-full max-w-sm overflow-y-auto rounded-lg p-5"
                 >
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-bold">Invite a Friend</h3>
@@ -457,7 +457,7 @@ function GdSimulatorInner() {
 
       {/* GD already ended by the time this person joined */}
       {view === 'gd-ended' && (
-        <div className="glass mx-auto max-w-md rounded-3xl p-8 text-center">
+        <div className="glass mx-auto max-w-md rounded-xl p-8 text-center">
           <span className="brand-gradient mx-auto flex size-12 items-center justify-center rounded-xl text-white">
             <MessagesSquare className="size-6" />
           </span>
@@ -476,7 +476,7 @@ function GdSimulatorInner() {
 
       {/* 5. Feedback */}
       {view === 'feedback' && (
-        <div className="glass mx-auto max-w-xl rounded-3xl p-8">
+        <div className="glass mx-auto max-w-xl rounded-xl p-8">
           <span className="brand-gradient flex size-12 items-center justify-center rounded-xl text-white">
             <Trophy className="size-6" />
           </span>

@@ -32,7 +32,7 @@ export function Leaderboard() {
   }, [])
 
   return (
-    <div className="glass flex h-full flex-col rounded-2xl p-5 md:p-6">
+    <div className="glass flex h-full flex-col rounded-lg p-5 md:p-6">
       <div className="mb-5 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Trophy className="size-5 text-brand-blue" />

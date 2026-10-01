@@ -145,7 +145,7 @@ export function InterviewSetupWizard({ onStart, isLoading }: InterviewSetupWizar
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900 via-slate-950 to-brand-blue/20 p-6 sm:p-8 backdrop-blur-xl shadow-2xl">
+      <div className="relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-slate-900 via-slate-950 to-brand-blue/20 p-6 sm:p-8  ">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-brand-cyan/30 bg-brand-cyan/10 px-3 py-1 text-xs font-semibold text-brand-cyan">
@@ -161,16 +161,16 @@ export function InterviewSetupWizard({ onStart, isLoading }: InterviewSetupWizar
           </div>
 
           <div className="flex shrink-0 items-center gap-3">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-3.5 text-center">
+            <div className="rounded-lg border border-white/10 bg-white/5 p-3.5 text-center">
               <span className="block font-mono text-xl font-bold text-brand-cyan">4</span>
               <span className="text-[10px] text-slate-400 uppercase tracking-wider">Tracks</span>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-3.5 text-center">
+            <div className="rounded-lg border border-white/10 bg-white/5 p-3.5 text-center">
               <span className="block font-mono text-xl font-bold text-emerald-400">0 - 5</span>
               <span className="text-[10px] text-slate-400 uppercase tracking-wider">Pace Levels</span>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-3.5 text-center">
-              <span className="block font-mono text-xl font-bold text-purple-400">Strict</span>
+            <div className="rounded-lg border border-white/10 bg-white/5 p-3.5 text-center">
+              <span className="block font-mono text-xl font-bold text-primary">Strict</span>
               <span className="text-[10px] text-slate-400 uppercase tracking-wider">Proctor AI</span>
             </div>
           </div>
@@ -178,7 +178,7 @@ export function InterviewSetupWizard({ onStart, isLoading }: InterviewSetupWizar
       </div>
 
       {/* Step 1: Select Track */}
-      <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6 backdrop-blur-md shadow-xl">
+      <div className="rounded-xl border border-white/10 bg-slate-950/70 p-6  ">
         <div className="flex items-center justify-between mb-4">
           <div>
             <span className="text-xs font-bold text-brand-cyan uppercase tracking-wider">STEP 1</span>
@@ -194,9 +194,9 @@ export function InterviewSetupWizard({ onStart, isLoading }: InterviewSetupWizar
               <button
                 key={t.id}
                 onClick={() => setTrack(t.id as any)}
-                className={`relative flex flex-col justify-between rounded-2xl border p-4 text-left transition-all duration-200 ${
+                className={`relative flex flex-col justify-between rounded-lg border p-4 text-left transition-all duration-200 ${
                   active
-                    ? 'border-brand-cyan bg-brand-cyan/10 shadow-lg shadow-brand-cyan/10 ring-2 ring-brand-cyan/30'
+                    ? 'border-brand-cyan bg-brand-cyan/10 shadow-lg  ring-2 ring-brand-cyan/30'
                     : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
                 }`}
               >
@@ -231,7 +231,7 @@ export function InterviewSetupWizard({ onStart, isLoading }: InterviewSetupWizar
       {/* Step 2: Job Description & Resume Upload */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Job Description Input */}
-        <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6 backdrop-blur-md shadow-xl">
+        <div className="rounded-xl border border-white/10 bg-slate-950/70 p-6  ">
           <div className="flex items-center justify-between mb-2">
             <div>
               <span className="text-xs font-bold text-brand-cyan uppercase tracking-wider">STEP 2</span>
@@ -262,12 +262,12 @@ export function InterviewSetupWizard({ onStart, isLoading }: InterviewSetupWizar
             onChange={(e) => setJobDescription(e.target.value)}
             rows={5}
             placeholder="Paste Job Description (e.g. SDE-1 requirements, required skills, company responsibilities)..."
-            className="w-full resize-none rounded-2xl border border-white/10 bg-slate-900/90 p-3.5 text-xs text-slate-100 placeholder:text-slate-500 focus:border-brand-cyan focus:outline-none focus:ring-1 focus:ring-brand-cyan/50"
+            className="w-full resize-none rounded-lg border border-white/10 bg-slate-900/90 p-3.5 text-xs text-slate-100 placeholder:text-slate-500 focus:border-brand-cyan focus:outline-none focus:ring-1 focus:ring-brand-cyan/50"
           />
         </div>
 
         {/* Resume Upload / Paste */}
-        <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6 backdrop-blur-md shadow-xl">
+        <div className="rounded-xl border border-white/10 bg-slate-950/70 p-6  ">
           <div className="flex items-center justify-between mb-2">
             <div>
               <span className="text-xs font-bold text-brand-cyan uppercase tracking-wider">STEP 3</span>
@@ -320,13 +320,13 @@ export function InterviewSetupWizard({ onStart, isLoading }: InterviewSetupWizar
             onChange={(e) => setResumeText(e.target.value)}
             rows={4}
             placeholder="Or paste resume text here directly (skills, education, internships, projects)..."
-            className="w-full resize-none rounded-2xl border border-white/10 bg-slate-900/90 p-3.5 text-xs text-slate-100 placeholder:text-slate-500 focus:border-brand-cyan focus:outline-none focus:ring-1 focus:ring-brand-cyan/50"
+            className="w-full resize-none rounded-lg border border-white/10 bg-slate-900/90 p-3.5 text-xs text-slate-100 placeholder:text-slate-500 focus:border-brand-cyan focus:outline-none focus:ring-1 focus:ring-brand-cyan/50"
           />
         </div>
       </div>
 
       {/* Step 4: AI interviewer persona */}
-      <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6 backdrop-blur-md shadow-xl">
+      <div className="rounded-xl border border-white/10 bg-slate-950/70 p-6  ">
         <div className="mb-4">
           <span className="text-xs font-bold uppercase tracking-wider text-brand-cyan">STEP 4</span>
           <h2 className="text-base font-semibold text-white">Choose Your AI Interviewer</h2>
@@ -337,7 +337,7 @@ export function InterviewSetupWizard({ onStart, isLoading }: InterviewSetupWizar
             { id: 'priya' as const, name: 'Priya Sharma', role: 'Senior Technical Recruiter', voice: 'Firm, warm · Gemini Kore', image: '/avatar-1.png' },
             { id: 'vikram' as const, name: 'Vikram Malhotra', role: 'Lead Software Engineer', voice: 'Confident, direct · Gemini Puck', image: '/avatar-2.png' },
           ].map((person) => (
-            <button key={person.id} type="button" onClick={() => setPersona(person.id)} className={`flex items-center gap-4 rounded-2xl border p-3 text-left transition-all ${persona === person.id ? 'border-brand-cyan bg-brand-cyan/10 ring-2 ring-brand-cyan/30' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}>
+            <button key={person.id} type="button" onClick={() => setPersona(person.id)} className={`flex items-center gap-4 rounded-lg border p-3 text-left transition-all ${persona === person.id ? 'border-brand-cyan bg-brand-cyan/10 ring-2 ring-brand-cyan/30' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}>
               <img src={person.image} alt={person.name} className="size-16 rounded-xl object-cover object-top" />
               <div className="min-w-0">
                 <p className="text-sm font-bold text-white">{person.name}</p>
@@ -350,7 +350,7 @@ export function InterviewSetupWizard({ onStart, isLoading }: InterviewSetupWizar
       </div>
 
       {/* Step 3: Difficulty / Pace Level & Question Count */}
-      <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6 backdrop-blur-md shadow-xl">
+      <div className="rounded-xl border border-white/10 bg-slate-950/70 p-6  ">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
           <div>
             <span className="text-xs font-bold text-brand-cyan uppercase tracking-wider">STEP 5</span>
@@ -367,7 +367,7 @@ export function InterviewSetupWizard({ onStart, isLoading }: InterviewSetupWizar
                 onClick={() => setQuestionCount(count)}
                 className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
                   questionCount === count
-                    ? 'bg-brand-cyan text-slate-950 shadow-md shadow-brand-cyan/20'
+                    ? 'bg-brand-cyan text-slate-950 shadow-md '
                     : 'border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
                 }`}
               >
@@ -386,7 +386,7 @@ export function InterviewSetupWizard({ onStart, isLoading }: InterviewSetupWizar
                 key={lvl.level}
                 type="button"
                 onClick={() => setLevel(lvl.level)}
-                className={`flex flex-col justify-between rounded-2xl border p-3.5 text-left transition-all ${
+                className={`flex flex-col justify-between rounded-lg border p-3.5 text-left transition-all ${
                   active
                     ? 'border-brand-cyan bg-brand-cyan/15 ring-2 ring-brand-cyan/40 shadow-lg'
                     : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
@@ -407,7 +407,7 @@ export function InterviewSetupWizard({ onStart, isLoading }: InterviewSetupWizar
       </div>
 
       {/* Start Button Bar */}
-      <div className="flex flex-col items-center justify-between gap-4 rounded-3xl border border-white/10 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 p-6 sm:flex-row shadow-2xl">
+      <div className="flex flex-col items-center justify-between gap-4 rounded-xl border border-white/10 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 p-6 sm:flex-row ">
         <div>
           <div className="flex items-center gap-2">
             <ShieldCheck className="size-4 text-emerald-400" />
@@ -423,7 +423,7 @@ export function InterviewSetupWizard({ onStart, isLoading }: InterviewSetupWizar
         <button
           onClick={handleStart}
           disabled={isLoading}
-          className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 px-8 py-4 text-sm font-bold text-white shadow-xl shadow-cyan-500/25 transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+          className="flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-8 py-4 text-sm font-bold   transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
         >
           {isLoading ? (
             <>

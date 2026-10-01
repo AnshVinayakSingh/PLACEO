@@ -51,7 +51,7 @@ function NavList({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: (
             title={collapsed ? item.label : undefined}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
+              'group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
               collapsed && 'justify-center',
               active
                 ? 'text-foreground'
@@ -61,14 +61,14 @@ function NavList({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: (
             {active && (
               <motion.span
                 layoutId="nav-active"
-                className="glass-strong glow-ring absolute inset-0 rounded-xl"
+                className="absolute inset-0 rounded-md bg-secondary"
                 transition={{ type: 'spring', stiffness: 380, damping: 32 }}
               />
             )}
             <Icon
               className={cn(
                 'relative z-10 size-5 shrink-0',
-                active && 'text-brand-blue',
+                active && 'text-primary',
               )}
             />
             {!collapsed && <span className="relative z-10 truncate">{item.label}</span>}
@@ -88,11 +88,12 @@ function Brand({ collapsed }: { collapsed: boolean }) {
         collapsed && 'justify-center px-0',
       )}
     >
-      <span className="brand-gradient glow-ring flex size-9 shrink-0 items-center justify-center rounded-xl">
-        <Sparkles className="size-5 text-primary-foreground" />
-      </span>
-      {!collapsed && (
-        <span className="font-display text-lg font-bold tracking-tight">PLACEO</span>
+      {collapsed ? (
+        <span className="font-display text-xl font-semibold">p<span className="text-primary">.</span></span>
+      ) : (
+        <span className="font-display text-xl font-semibold tracking-tight">
+          placeo<span className="text-primary">.</span>
+        </span>
       )}
     </Link>
   )
@@ -110,7 +111,7 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          'glass sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-border transition-[width] duration-300 lg:flex',
+          'sticky top-0 hidden bg-card/50 h-dvh shrink-0 flex-col border-r border-border transition-[width] duration-300 lg:flex',
           collapsed ? 'w-20' : 'w-64',
         )}
       >
@@ -123,14 +124,14 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
         {mobileOpen && (
           <>
             <motion.div
-              className="fixed inset-0 z-40 bg-background/70 backdrop-blur-sm lg:hidden"
+              className="fixed inset-0 z-40 bg-background/80 lg:hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={onCloseMobile}
             />
             <motion.aside
-              className="glass-strong fixed inset-y-0 left-0 z-50 flex w-72 flex-col lg:hidden"
+              className="fixed inset-y-0 left-0 border-r border-border bg-background z-50 flex w-72 flex-col lg:hidden"
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}

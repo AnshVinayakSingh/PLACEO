@@ -166,7 +166,7 @@ export default function LeaderboardPage() {
       description="Add friends by their PLACEO ID to compare real progress."
     >
       {/* Tabs */}
-      <div className="glass mb-4 flex gap-1.5 rounded-2xl p-1.5">
+      <div className="glass mb-4 flex gap-1.5 rounded-lg p-1.5">
         {([
           { id: 'leaderboard' as const, label: 'Leaderboard', icon: Trophy, badge: 0 },
           { id: 'requests' as const, label: 'Requests', icon: Bell, badge: incoming.length },
@@ -195,11 +195,11 @@ export default function LeaderboardPage() {
       {tab === 'leaderboard' && (
         <>
           {loading ? (
-            <div className="glass flex min-h-[300px] items-center justify-center rounded-2xl">
+            <div className="glass flex min-h-[300px] items-center justify-center rounded-lg">
               <Loader2 className="size-6 animate-spin text-muted-foreground" />
             </div>
           ) : !hasFriends ? (
-            <div className="glass flex min-h-[300px] flex-col items-center justify-center gap-3 rounded-2xl p-8 text-center">
+            <div className="glass flex min-h-[300px] flex-col items-center justify-center gap-3 rounded-lg p-8 text-center">
               <Users className="size-9 text-muted-foreground" />
               <p className="text-sm font-medium">No friends yet</p>
               <p className="max-w-sm text-sm text-muted-foreground">
@@ -218,7 +218,7 @@ export default function LeaderboardPage() {
             <>
               <div className="grid gap-4 sm:grid-cols-3">
                 {leaderboard!.slice(0, 3).map((f, i) => {
-                  const medalColor = ['oklch(0.85 0.16 90)', 'oklch(0.8 0.02 275)', 'oklch(0.68 0.14 55)'][i]
+                  const medalColor = ['oklch(0.85 0.16 90)', 'oklch(0.8 0.01 80)', 'oklch(0.68 0.14 55)'][i]
                   return (
                     <motion.button
                       key={f.id}
@@ -227,7 +227,7 @@ export default function LeaderboardPage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.4, delay: i * 0.08 }}
                       className={cn(
-                        'glass relative rounded-2xl p-5 text-center transition-transform',
+                        'glass relative rounded-lg p-5 text-center transition-transform',
                         !f.isYou && 'cursor-pointer hover:scale-[1.02]',
                       )}
                     >
@@ -244,7 +244,7 @@ export default function LeaderboardPage() {
                 })}
               </div>
 
-              <div className="glass mt-4 overflow-hidden rounded-2xl">
+              <div className="glass mt-4 overflow-hidden rounded-lg">
                 <div className="hidden grid-cols-[3rem_1fr_6rem_6rem] gap-2 border-b border-border px-5 py-3 text-xs font-medium text-muted-foreground sm:grid">
                   <span>Rank</span>
                   <span>Student</span>
@@ -284,7 +284,7 @@ export default function LeaderboardPage() {
       {/* Requests tab */}
       {tab === 'requests' && (
         <div className="space-y-4">
-          <div className="glass rounded-2xl p-5">
+          <div className="glass rounded-lg p-5">
             <h3 className="font-display mb-3 flex items-center gap-2 text-sm font-semibold">
               <Bell className="size-4 text-brand-cyan" /> Incoming Requests
             </h3>
@@ -314,7 +314,7 @@ export default function LeaderboardPage() {
             )}
           </div>
 
-          <div className="glass rounded-2xl p-5">
+          <div className="glass rounded-lg p-5">
             <h3 className="font-display mb-3 flex items-center gap-2 text-sm font-semibold">
               <Clock className="size-4 text-muted-foreground" /> Sent Requests (waiting)
             </h3>
@@ -337,7 +337,7 @@ export default function LeaderboardPage() {
 
       {/* Add friend tab */}
       {tab === 'add' && (
-        <div className="glass mx-auto max-w-md rounded-2xl p-6">
+        <div className="glass mx-auto max-w-md rounded-lg p-6">
           <h3 className="font-display mb-1 flex items-center gap-2 text-sm font-semibold">
             <Search className="size-4 text-brand-cyan" /> Add a friend
           </h3>
@@ -377,14 +377,14 @@ export default function LeaderboardPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => !loadingProfile && setSelected(null)}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4 "
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               onClick={(e) => e.stopPropagation()}
-              className="glass-strong w-full max-w-sm rounded-2xl p-6"
+              className="glass-strong w-full max-w-sm rounded-lg p-6"
             >
               {loadingProfile || !selected ? (
                 <div className="flex h-40 items-center justify-center">

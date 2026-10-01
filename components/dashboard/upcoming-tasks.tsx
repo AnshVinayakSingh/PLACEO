@@ -22,7 +22,7 @@ export function ContinueLearning() {
     .slice(0, 4)
 
   return (
-    <div className="glass flex h-full flex-col rounded-2xl p-5 md:p-6">
+    <div className="glass flex h-full flex-col rounded-lg p-5 md:p-6">
       <div className="mb-5 flex items-center gap-2">
         <ListTodo className="size-5 text-brand-blue" />
         <h3 className="font-display text-lg font-semibold">Continue Learning</h3>

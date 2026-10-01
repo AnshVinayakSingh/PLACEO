@@ -1,76 +1,61 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { motion, useInView } from 'motion/react'
+import { Reveal } from './reveal'
 
-type Stat = {
-  value: number
-  suffix: string
-  label: string
-}
-
-const stats: Stat[] = [
-  { value: 10, suffix: '+', label: 'AI-powered tools' },
-  { value: 13, suffix: '+', label: 'DSA topics tracked' },
-  { value: 12, suffix: '+', label: 'Companies in Coding Hub' },
-  { value: 100, suffix: '%', label: 'Free to use' },
+const steps = [
+  {
+    n: '1',
+    title: 'Tell us the role',
+    body: 'Pick a target role and take a short skill check. It takes about ten minutes.',
+  },
+  {
+    n: '2',
+    title: 'Get a plan',
+    body: 'You receive a weekly roadmap tied to your gaps, not a generic syllabus.',
+  },
+  {
+    n: '3',
+    title: 'Rehearse, then adjust',
+    body: 'Mock interviews and GDs feed back into the plan, so each week is a bit sharper.',
+  },
 ]
 
-function formatValue(n: number) {
-  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`
-  if (n >= 1000) return `${Math.round(n / 1000)}K`
-  return `${n}`
-}
-
-function Counter({ value, suffix }: { value: number; suffix: string }) {
-  const ref = useRef<HTMLSpanElement>(null)
-  const inView = useInView(ref, { once: true, margin: '-60px' })
-  const [display, setDisplay] = useState(0)
-
-  useEffect(() => {
-    if (!inView) return
-    let raf = 0
-    const start = performance.now()
-    const duration = 1600
-    const tick = (now: number) => {
-      const p = Math.min((now - start) / duration, 1)
-      const eased = 1 - Math.pow(1 - p, 3)
-      setDisplay(Math.round(eased * value))
-      if (p < 1) raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [inView, value])
-
-  return (
-    <span ref={ref} className="text-gradient font-display tabular-nums">
-      {formatValue(display)}
-      {suffix}
-    </span>
-  )
-}
+const facts = [
+  { v: '10+', l: 'tools in one login' },
+  { v: '13', l: 'DSA topics tracked' },
+  { v: '12', l: 'companies in the coding hub' },
+  { v: '₹0', l: 'to start' },
+]
 
 export function Stats() {
   return (
-    <section className="relative px-4 py-16">
+    <section id="process" className="relative border-y border-border bg-card/40 px-5 py-28">
       <div className="mx-auto max-w-6xl">
-        <div className="glass-strong grid gap-6 rounded-3xl p-8 sm:grid-cols-2 lg:grid-cols-4 lg:p-12">
-          {stats.map((s, i) => (
-            <motion.div
-              key={s.label}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-60px' }}
-              transition={{ duration: 0.5, delay: i * 0.08 }}
-              className="text-center"
-            >
-              <div className="text-4xl font-bold tracking-tight sm:text-5xl">
-                <Counter value={s.value} suffix={s.suffix} />
-              </div>
-              <p className="mt-2 text-sm text-muted-foreground">{s.label}</p>
-            </motion.div>
+        <Reveal>
+          <p className="eyebrow">How it works</p>
+          <h2 className="font-display mt-4 max-w-2xl text-4xl font-semibold leading-[1.05] tracking-[-0.025em] sm:text-5xl">
+            Three steps, and the loop repeats.
+          </h2>
+        </Reveal>
+
+        <div className="mt-14 grid gap-px overflow-hidden rounded-lg border border-border bg-border md:grid-cols-3">
+          {steps.map((s, i) => (
+            <Reveal key={s.n} delay={i * 0.05} className="bg-background p-8">
+              <span className="font-display text-5xl font-medium text-primary">{s.n}</span>
+              <h3 className="font-display mt-6 text-xl font-medium">{s.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{s.body}</p>
+            </Reveal>
           ))}
         </div>
+
+        <dl className="mt-16 grid grid-cols-2 gap-y-8 lg:grid-cols-4">
+          {facts.map((f) => (
+            <div key={f.l} className="border-l border-border pl-5">
+              <dt className="font-display text-4xl font-medium tabular-nums tracking-tight">{f.v}</dt>
+              <dd className="mt-1 text-sm text-muted-foreground">{f.l}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
     </section>
   )

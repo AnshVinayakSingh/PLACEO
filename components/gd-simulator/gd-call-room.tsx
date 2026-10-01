@@ -766,7 +766,7 @@ export function GDCallRoom({
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4">
-      <div className="glass flex items-center justify-between rounded-2xl px-5 py-3">
+      <div className="glass flex items-center justify-between rounded-lg px-5 py-3">
         <div className="flex items-center gap-2 text-xs font-medium text-slate-300">
           <Wifi className={`size-4 ${connected ? 'text-emerald-400' : 'text-amber-400 animate-pulse'}`} />
           {status}
@@ -782,7 +782,7 @@ export function GDCallRoom({
       </div>
 
       {mode === 'solo' ? (
-        <div className="glass flex flex-col items-center gap-4 rounded-3xl p-8 text-center">
+        <div className="glass flex flex-col items-center gap-4 rounded-xl p-8 text-center">
           <AIGDAvatar speaking={aiSpeaking} />
           <div>
             <p className="text-sm font-bold text-white">GD Coach AI</p>
@@ -793,18 +793,18 @@ export function GDCallRoom({
           </div>
         </div>
       ) : (
-        <div className="glass rounded-3xl p-4">
+        <div className="glass rounded-xl p-4">
           <p className="mb-3 px-1 text-xs text-slate-400">
             {jobRole} · {companyName} · Topic: {topic}
           </p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {/* AI moderator tile */}
-            <div className="relative flex aspect-video flex-col items-center justify-center gap-2 rounded-2xl bg-slate-900/70">
+            <div className="relative flex aspect-video flex-col items-center justify-center gap-2 rounded-lg bg-slate-900/70">
               <AIGDAvatar speaking={aiSpeaking} />
               <span className="absolute bottom-1.5 left-2 rounded bg-black/50 px-1.5 py-0.5 text-[10px] font-medium text-white">GD Coach AI</span>
             </div>
             {/* Self tile */}
-            <div className="relative aspect-video overflow-hidden rounded-2xl bg-slate-900/70">
+            <div className="relative aspect-video overflow-hidden rounded-lg bg-slate-900/70">
               <video ref={localVideoElRef} autoPlay playsInline muted className="size-full object-cover" />
               <span className="absolute bottom-1.5 left-2 rounded bg-black/50 px-1.5 py-0.5 text-[10px] font-medium text-white">You ({userName})</span>
               {!micEnabled && <MicOff className="absolute right-2 top-2 size-4 text-rose-400" />}
@@ -813,7 +813,7 @@ export function GDCallRoom({
             {remotePeerIds.map((peerId) => {
               const peerName = roomMembers?.find((m) => m.userId === peerId)?.name || 'Participant'
               return (
-                <div key={peerId} className="relative aspect-video overflow-hidden rounded-2xl bg-slate-900/70">
+                <div key={peerId} className="relative aspect-video overflow-hidden rounded-lg bg-slate-900/70">
                   <video
                     autoPlay
                     playsInline
@@ -828,7 +828,7 @@ export function GDCallRoom({
         </div>
       )}
 
-      <div className="glass max-h-64 overflow-y-auto rounded-2xl p-4 text-left text-xs">
+      <div className="glass max-h-64 overflow-y-auto rounded-lg p-4 text-left text-xs">
         {liveTranscript.length === 0 && <p className="text-slate-500">Transcript will appear here as the discussion starts…</p>}
         {liveTranscript.map((entry, i) => (
           <p key={i} className={`mb-2 ${entry.offTopic ? 'text-amber-400' : 'text-slate-300'}`}>

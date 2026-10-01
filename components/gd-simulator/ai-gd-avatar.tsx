@@ -40,14 +40,14 @@ export function AIGDAvatar({ speaking }: AIGDAvatarProps) {
   const eyeHeight = blink ? 1 : 8
 
   return (
-    <div className={`relative flex size-32 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-700 shadow-2xl transition-transform duration-200 ${speaking ? 'scale-105 shadow-cyan-500/50' : ''}`}>
-      {speaking && <span className="absolute inset-0 animate-ping rounded-full bg-cyan-400/25" />}
+    <div className={`relative flex size-32 items-center justify-center rounded-full bg-primary  transition-transform duration-200 ${speaking ? 'scale-105 ' : ''}`}>
+      {speaking && <span className="absolute inset-0 animate-ping rounded-full bg-primary/25" />}
       <svg viewBox="0 0 120 120" className="relative size-24">
         {/* Face base */}
-        <circle cx="60" cy="58" r="42" fill="#0f172a" opacity="0.25" />
+        <circle cx="60" cy="58" r="42" fill="#1c1612" opacity="0.25" />
         {/* Eyes */}
-        <rect x="36" y="46" width="14" rx="6" height={eyeHeight} fill="#e0f2fe" style={{ transition: 'height 0.08s' }} />
-        <rect x="70" y="46" width="14" rx="6" height={eyeHeight} fill="#e0f2fe" style={{ transition: 'height 0.08s' }} />
+        <rect x="36" y="46" width="14" rx="6" height={eyeHeight} fill="#f6ebdd" style={{ transition: 'height 0.08s' }} />
+        <rect x="70" y="46" width="14" rx="6" height={eyeHeight} fill="#f6ebdd" style={{ transition: 'height 0.08s' }} />
         {/* Mouth */}
         <rect
           x="42"
@@ -55,7 +55,7 @@ export function AIGDAvatar({ speaking }: AIGDAvatarProps) {
           width="36"
           rx="8"
           height={mouthHeight}
-          fill="#e0f2fe"
+          fill="#f6ebdd"
           style={{ transition: 'height 0.06s, y 0.06s' }}
         />
       </svg>

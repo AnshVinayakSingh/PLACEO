@@ -38,24 +38,19 @@ const faqs: QA[] = [
 function FaqItem({ item, index }: { item: QA; index: number }) {
   const [open, setOpen] = useState(false)
   return (
-    <Reveal delay={index * 0.04}>
-      <div
-        className={cn(
-          'glass overflow-hidden rounded-2xl transition-colors',
-          open && 'glow-ring',
-        )}
-      >
+    <Reveal delay={index * 0.03}>
+      <div className="border-b border-border">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
-          className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left"
+          className="flex w-full items-center justify-between gap-6 py-6 text-left"
         >
-          <span className="font-display font-semibold">{item.q}</span>
+          <span className="font-display text-lg font-medium tracking-tight">{item.q}</span>
           <Plus
             className={cn(
-              'size-5 shrink-0 text-muted-foreground transition-transform duration-300',
-              open && 'rotate-45 text-foreground',
+              'size-5 shrink-0 text-muted-foreground transition-transform duration-200',
+              open && 'rotate-45 text-primary',
             )}
           />
         </button>
@@ -65,9 +60,10 @@ function FaqItem({ item, index }: { item: QA; index: number }) {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="overflow-hidden"
             >
-              <p className="px-6 pb-5 text-sm leading-relaxed text-muted-foreground">
+              <p className="max-w-2xl pb-6 leading-relaxed text-muted-foreground">
                 {item.a}
               </p>
             </motion.div>
@@ -80,18 +76,16 @@ function FaqItem({ item, index }: { item: QA; index: number }) {
 
 export function Faq() {
   return (
-    <section id="faq" className="relative px-4 py-24">
-      <div className="mx-auto max-w-3xl">
-        <Reveal className="mx-auto max-w-2xl text-center">
-          <span className="glass inline-flex rounded-full px-3 py-1 text-xs font-medium text-muted-foreground">
-            FAQ
-          </span>
-          <h2 className="font-display mt-4 text-balance text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-            Questions? <span className="text-gradient">Answered.</span>
+    <section id="faq" className="relative px-5 py-28">
+      <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-12">
+        <Reveal className="lg:col-span-4">
+          <p className="eyebrow">FAQ</p>
+          <h2 className="font-display mt-4 text-4xl font-semibold leading-[1.05] tracking-[-0.025em]">
+            Before you <span className="text-gradient">sign up</span>
           </h2>
         </Reveal>
 
-        <div className="mt-12 flex flex-col gap-3">
+        <div className="border-t border-border lg:col-span-8">
           {faqs.map((item, i) => (
             <FaqItem key={item.q} item={item} index={i} />
           ))}

@@ -15,7 +15,7 @@ export default function NotesSimplifierPage() {
       description="Upload PDFs or notes — get exam-ready summaries without losing technical meaning."
     >
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="glass rounded-2xl p-6">
+        <div className="glass rounded-lg p-6">
           <h3 className="font-display text-sm font-semibold">Upload your notes</h3>
           <div className="mt-4 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border px-6 py-12 text-center transition-colors hover:border-brand-blue/50">
             <UploadCloud className="size-9 text-brand-cyan" />
@@ -53,7 +53,7 @@ export default function NotesSimplifierPage() {
           </button>
         </div>
 
-        <div className="glass rounded-2xl p-6">
+        <div className="glass rounded-lg p-6">
           <h3 className="font-display text-sm font-semibold">Simplified output</h3>
           {!generated ? (
             <div className="mt-4 flex h-64 flex-col items-center justify-center text-center text-sm text-muted-foreground">

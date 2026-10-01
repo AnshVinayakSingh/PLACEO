@@ -26,7 +26,7 @@ export function AiInsight() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
-      className="glass-strong glow-ring relative h-full overflow-hidden rounded-2xl p-6"
+      className="glass-strong glow-ring relative h-full overflow-hidden rounded-lg p-6"
     >
       <div className="brand-gradient pointer-events-none absolute -right-10 -top-10 size-40 rounded-full opacity-30 blur-3xl" />
       <div className="relative flex items-center gap-2">

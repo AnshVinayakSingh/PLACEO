@@ -123,7 +123,7 @@ export default function CodingHubPage() {
         </button>
 
         {loading && (
-          <div className="glass flex flex-col items-center justify-center gap-3 rounded-2xl p-12 text-center">
+          <div className="glass flex flex-col items-center justify-center gap-3 rounded-lg p-12 text-center">
             <Loader2 className="size-8 animate-spin text-brand-cyan" />
             <p className="text-sm text-muted-foreground">Fetching questions for {selectedCompany}...</p>
           </div>
@@ -134,7 +134,7 @@ export default function CodingHubPage() {
         )}
 
         {!loading && result && !result.found && (
-          <div className="glass flex flex-col items-center gap-3 rounded-2xl p-10 text-center">
+          <div className="glass flex flex-col items-center gap-3 rounded-lg p-10 text-center">
             <SearchX className="size-8 text-muted-foreground" />
             <p className="text-sm font-medium">{result.message}</p>
             {result.fallbackLink && (
@@ -232,7 +232,7 @@ export default function CodingHubPage() {
       {/* Custom company search */}
       <form
         onSubmit={onCustomSearchSubmit}
-        className="glass mb-6 flex flex-col gap-3 rounded-2xl p-5 sm:flex-row sm:items-center"
+        className="glass mb-6 flex flex-col gap-3 rounded-lg p-5 sm:flex-row sm:items-center"
       >
         <Sparkles className="hidden size-5 shrink-0 text-brand-cyan sm:block" />
         <input
@@ -260,7 +260,7 @@ export default function CodingHubPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: Math.min(i * 0.03, 0.5) }}
             whileHover={{ y: -3 }}
-            className="glass cursor-pointer rounded-2xl p-5 text-left"
+            className="glass cursor-pointer rounded-lg p-5 text-left"
           >
             <span
               className="flex size-11 items-center justify-center rounded-xl text-sm font-bold text-white"

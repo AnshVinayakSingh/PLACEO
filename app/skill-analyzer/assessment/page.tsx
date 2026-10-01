@@ -150,7 +150,7 @@ function AssessmentFlow() {
 
   if (!skill) {
     return (
-      <div className="glass rounded-2xl p-8 text-center text-sm text-muted-foreground">
+      <div className="glass rounded-lg p-8 text-center text-sm text-muted-foreground">
         No skill selected.{' '}
         <Link href="/skill-analyzer" className="text-brand-cyan hover:underline">
           Go back and pick one.
@@ -169,7 +169,7 @@ function AssessmentFlow() {
         Back to Skill Analyzer
       </Link>
 
-      <div className="glass-strong rounded-2xl p-5 sm:p-8">
+      <div className="glass-strong rounded-lg p-5 sm:p-8">
         {stage === 'loading' && (
           <div className="flex h-56 items-center justify-center">
             <Loader2 className="size-6 animate-spin text-brand-cyan" />

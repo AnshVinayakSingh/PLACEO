@@ -56,8 +56,8 @@ const STUDY_PALETTE = [
   'bg-brand-blue/20 text-brand-cyan border-brand-blue/30',
   'bg-emerald-400/15 text-emerald-300 border-emerald-400/30',
   'bg-amber-400/15 text-amber-300 border-amber-400/30',
-  'bg-cyan-400/15 text-cyan-300 border-cyan-400/30',
-  'bg-fuchsia-400/15 text-fuchsia-300 border-fuchsia-400/30',
+  'bg-primary/15 text-primary border-primary/30',
+  'bg-brand-cyan/15 text-brand-cyan border-brand-cyan/30',
 ]
 
 function to12Hour(time: string): string {
@@ -95,7 +95,7 @@ function SectionCard({
   children: ReactNode
 }) {
   return (
-    <div className="glass rounded-2xl p-5">
+    <div className="glass rounded-lg p-5">
       <div className="mb-4 flex items-center gap-2.5">
         <span className="brand-gradient flex size-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-primary-foreground">
           {step}
@@ -582,7 +582,7 @@ export default function AiPlannerPage() {
         {/* ---------- Output ---------- */}
         <div className="lg:col-span-3">
           {!plan && !loading && (
-            <div className="glass flex h-full min-h-[400px] flex-col items-center justify-center rounded-2xl p-8 text-center">
+            <div className="glass flex h-full min-h-[400px] flex-col items-center justify-center rounded-lg p-8 text-center">
               <Sparkles className="mb-3 size-8 text-brand-cyan" />
               <p className="text-sm text-muted-foreground">
                 Fill in your fixed hours and topics on the left, then generate your personalized weekday and weekend
@@ -592,7 +592,7 @@ export default function AiPlannerPage() {
           )}
 
           {loading && (
-            <div className="glass flex h-full min-h-[400px] flex-col items-center justify-center gap-3 rounded-2xl p-8">
+            <div className="glass flex h-full min-h-[400px] flex-col items-center justify-center gap-3 rounded-lg p-8">
               <Loader2 className="size-8 animate-spin text-brand-cyan" />
               <p className="text-sm text-muted-foreground">Building your weekday & weekend plan...</p>
             </div>
@@ -606,7 +606,7 @@ export default function AiPlannerPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <div className="glass rounded-2xl p-4">
+                <div className="glass rounded-lg p-4">
                   <div className="mb-4 flex gap-1.5 border-b border-border pb-3">
                     <button
                       onClick={() => setActiveTab('weekday')}
@@ -637,7 +637,7 @@ export default function AiPlannerPage() {
                 {plan.insights?.length > 0 && (
                   <div className="mt-4 grid gap-4 md:grid-cols-3">
                     {plan.insights.map((c) => (
-                      <div key={c.title} className="glass rounded-2xl p-5">
+                      <div key={c.title} className="glass rounded-lg p-5">
                         <h4 className="text-sm font-semibold text-brand-cyan">{c.title}</h4>
                         <p className="mt-2 text-sm text-muted-foreground">{c.text}</p>
                       </div>

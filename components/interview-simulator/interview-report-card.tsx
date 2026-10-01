@@ -75,7 +75,7 @@ export function InterviewReportCard({ report, track, level, onRetake }: Intervie
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       {/* Header Summary Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900 via-slate-950 to-brand-blue/20 p-6 sm:p-8 backdrop-blur-xl shadow-2xl">
+      <div className="relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-slate-900 via-slate-950 to-brand-blue/20 p-6 sm:p-8  ">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-brand-cyan/30 bg-brand-cyan/10 px-3 py-1 text-xs font-semibold text-brand-cyan">
@@ -91,8 +91,8 @@ export function InterviewReportCard({ report, track, level, onRetake }: Intervie
           </div>
 
           {/* Big Score Gauge */}
-          <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5">
-            <div className="relative flex size-20 items-center justify-center rounded-2xl bg-slate-900 border border-white/15 shadow-inner">
+          <div className="flex items-center gap-4 rounded-lg border border-white/10 bg-white/5 p-4 sm:p-5">
+            <div className="relative flex size-20 items-center justify-center rounded-lg bg-slate-900 border border-white/15 shadow-inner">
               <span className={`font-mono text-3xl font-extrabold ${getScoreColor(report.overallScore)}`}>
                 {report.overallScore}
               </span>
@@ -114,7 +114,7 @@ export function InterviewReportCard({ report, track, level, onRetake }: Intervie
       </div>
 
       {/* Selection Probability Boost Card */}
-      <div className="rounded-3xl border border-emerald-500/30 bg-gradient-to-r from-emerald-950/40 via-slate-950 to-slate-900 p-6 backdrop-blur-md shadow-xl">
+      <div className="rounded-xl border border-emerald-500/30 bg-gradient-to-r from-emerald-950/40 via-slate-950 to-slate-900 p-6  ">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="flex items-center gap-2 text-emerald-400">
@@ -128,12 +128,12 @@ export function InterviewReportCard({ report, track, level, onRetake }: Intervie
 
           {/* Visual Percentage Jump */}
           <div className="flex items-center gap-3 shrink-0">
-            <div className="rounded-2xl border border-white/10 bg-slate-900/90 px-4 py-3 text-center">
+            <div className="rounded-lg border border-white/10 bg-slate-900/90 px-4 py-3 text-center">
               <span className="text-[10px] uppercase font-semibold text-slate-400">Current</span>
               <p className="text-xl font-bold font-mono text-slate-200">{report.selectionProbability.current}%</p>
             </div>
             <div className="text-emerald-400 font-extrabold text-lg">➔</div>
-            <div className="rounded-2xl border border-emerald-500/40 bg-emerald-950/60 px-4 py-3 text-center">
+            <div className="rounded-lg border border-emerald-500/40 bg-emerald-950/60 px-4 py-3 text-center">
               <span className="text-[10px] uppercase font-semibold text-emerald-400">With Fixes</span>
               <p className="text-2xl font-black font-mono text-emerald-300">{report.selectionProbability.projected}%</p>
             </div>
@@ -146,7 +146,7 @@ export function InterviewReportCard({ report, track, level, onRetake }: Intervie
 
       {/* Parameter Scores Breakdown */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-4 backdrop-blur-md">
+        <div className="rounded-lg border border-white/10 bg-slate-950/70 p-4 ">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
             <span className="flex items-center gap-1.5"><Brain className="size-4 text-brand-cyan" /> Tech & Logic</span>
             <span className="font-mono text-brand-cyan">{report.parameterScores.technical}%</span>
@@ -156,17 +156,17 @@ export function InterviewReportCard({ report, track, level, onRetake }: Intervie
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-4 backdrop-blur-md">
+        <div className="rounded-lg border border-white/10 bg-slate-950/70 p-4 ">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
-            <span className="flex items-center gap-1.5"><MessageSquare className="size-4 text-purple-400" /> Communication</span>
-            <span className="font-mono text-purple-400">{report.parameterScores.communication}%</span>
+            <span className="flex items-center gap-1.5"><MessageSquare className="size-4 text-primary" /> Communication</span>
+            <span className="font-mono text-primary">{report.parameterScores.communication}%</span>
           </div>
           <div className="mt-3 h-2 w-full rounded-full bg-slate-800 overflow-hidden">
-            <div className="h-full bg-purple-400 transition-all" style={{ width: `${report.parameterScores.communication}%` }}></div>
+            <div className="h-full bg-primary transition-all" style={{ width: `${report.parameterScores.communication}%` }}></div>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-4 backdrop-blur-md">
+        <div className="rounded-lg border border-white/10 bg-slate-950/70 p-4 ">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
             <span className="flex items-center gap-1.5"><BarChart3 className="size-4 text-emerald-400" /> Behavioral</span>
             <span className="font-mono text-emerald-400">{report.parameterScores.behavioral}%</span>
@@ -176,7 +176,7 @@ export function InterviewReportCard({ report, track, level, onRetake }: Intervie
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-4 backdrop-blur-md">
+        <div className="rounded-lg border border-white/10 bg-slate-950/70 p-4 ">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
             <span className="flex items-center gap-1.5"><ShieldCheck className="size-4 text-amber-400" /> Proctor Integrity</span>
             <span className="font-mono text-amber-400">{report.parameterScores.integrity}%</span>
@@ -190,7 +190,7 @@ export function InterviewReportCard({ report, track, level, onRetake }: Intervie
       {/* Identified Weaknesses & Action Plan */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Identified Weaknesses */}
-        <div className="rounded-3xl border border-rose-500/20 bg-slate-950/70 p-6 backdrop-blur-md shadow-xl">
+        <div className="rounded-xl border border-rose-500/20 bg-slate-950/70 p-6  ">
           <div className="flex items-center gap-2 text-rose-400 mb-3">
             <AlertTriangle className="size-4" />
             <h2 className="text-sm font-bold uppercase tracking-wider">Identified Weaknesses & Lags</h2>
@@ -210,7 +210,7 @@ export function InterviewReportCard({ report, track, level, onRetake }: Intervie
         </div>
 
         {/* Actionable Improvement Roadmap */}
-        <div className="rounded-3xl border border-brand-blue/30 bg-slate-950/70 p-6 backdrop-blur-md shadow-xl">
+        <div className="rounded-xl border border-brand-blue/30 bg-slate-950/70 p-6  ">
           <div className="flex items-center gap-2 text-brand-cyan mb-3">
             <Sparkles className="size-4" />
             <h2 className="text-sm font-bold uppercase tracking-wider">Actionable Placement Roadmap</h2>
@@ -221,7 +221,7 @@ export function InterviewReportCard({ report, track, level, onRetake }: Intervie
 
           <div className="space-y-3">
             {report.actionableRoadmap.map((item, i) => (
-              <div key={i} className="rounded-2xl border border-white/10 bg-white/5 p-3.5">
+              <div key={i} className="rounded-lg border border-white/10 bg-white/5 p-3.5">
                 <div className="flex items-center justify-between mb-1">
                   <h4 className="text-xs font-bold text-white">{item.title}</h4>
                   <span className="rounded bg-brand-cyan/20 px-1.5 py-0.5 text-[9px] font-semibold text-brand-cyan">
@@ -236,7 +236,7 @@ export function InterviewReportCard({ report, track, level, onRetake }: Intervie
       </div>
 
       {/* Detailed Question-by-Question Review */}
-      <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6 backdrop-blur-md shadow-xl">
+      <div className="rounded-xl border border-white/10 bg-slate-950/70 p-6  ">
         <div className="flex items-center justify-between mb-4">
           <div>
             <span className="text-xs font-bold text-brand-cyan uppercase tracking-wider">DETAILED BREAKDOWN</span>
@@ -251,7 +251,7 @@ export function InterviewReportCard({ report, track, level, onRetake }: Intervie
             return (
               <div
                 key={q.id}
-                className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 transition-all"
+                className="overflow-hidden rounded-lg border border-white/10 bg-white/5 transition-all"
               >
                 <button
                   type="button"
@@ -322,7 +322,7 @@ export function InterviewReportCard({ report, track, level, onRetake }: Intervie
       <div className="flex items-center justify-between gap-4">
         <button
           onClick={() => window.print()}
-          className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white"
+          className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-5 py-3 text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white"
         >
           <Printer className="size-4" />
           <span>Save / Print Report</span>
@@ -330,7 +330,7 @@ export function InterviewReportCard({ report, track, level, onRetake }: Intervie
 
         <button
           onClick={onRetake}
-          className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 px-6 py-3 text-xs font-bold text-white shadow-xl shadow-cyan-500/25 transition-all hover:scale-105 active:scale-95"
+          className="flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-6 py-3 text-xs font-bold   transition-all hover:scale-105 active:scale-95"
         >
           <RotateCcw className="size-4" />
           <span>Retake Another Interview</span>

@@ -15,10 +15,10 @@ type SkillSummary = {
 }
 
 function ringColor(v: number) {
-  if (v >= 80) return 'oklch(0.75 0.15 220)'
-  if (v >= 60) return 'oklch(0.62 0.2 265)'
+  if (v >= 80) return 'oklch(0.83 0.09 85)'
+  if (v >= 60) return 'var(--primary)'
   if (v > 0) return 'oklch(0.7 0.19 60)'
-  return 'oklch(0.55 0.02 275)'
+  return 'oklch(0.5 0.01 70)'
 }
 
 export default function SkillAnalyzerPage() {
@@ -51,7 +51,7 @@ export default function SkillAnalyzerPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: i * 0.06 }}
               whileHover={{ y: -4 }}
-              className="glass rounded-2xl p-5"
+              className="glass rounded-lg p-5"
             >
               <div className="flex items-center justify-between">
                 <div>

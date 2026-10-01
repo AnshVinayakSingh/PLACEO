@@ -74,7 +74,7 @@ function SkillSelector({
   const isOther = selected === null
 
   return (
-    <div className="glass rounded-2xl p-5">
+    <div className="glass rounded-lg p-5">
       <p className="mb-3 text-sm text-muted-foreground">Which skill do you want a roadmap for?</p>
       <div className="flex flex-wrap gap-2">
         {PRESET_SKILLS.map((s) => (
@@ -279,7 +279,7 @@ export default function RoadmapPage() {
         {error && <div className="rounded-lg bg-destructive/10 px-3 py-2.5 text-sm text-destructive">{error}</div>}
 
         {!roadmap && !loading && (
-          <div className="glass flex min-h-[300px] flex-col items-center justify-center rounded-2xl p-8 text-center">
+          <div className="glass flex min-h-[300px] flex-col items-center justify-center rounded-lg p-8 text-center">
             <Sparkles className="mb-3 size-8 text-brand-cyan" />
             <p className="text-sm text-muted-foreground">
               Choose a skill above and generate your personalized roadmap.
@@ -288,7 +288,7 @@ export default function RoadmapPage() {
         )}
 
         {loading && (
-          <div className="glass flex min-h-[300px] flex-col items-center justify-center gap-3 rounded-2xl p-8">
+          <div className="glass flex min-h-[300px] flex-col items-center justify-center gap-3 rounded-lg p-8">
             <Loader2 className="size-8 animate-spin text-brand-cyan" />
             <p className="text-sm text-muted-foreground">Building your roadmap for {effectiveSkill}...</p>
           </div>
@@ -309,9 +309,9 @@ export default function RoadmapPage() {
                 <StatCard icon={<Briefcase className="size-4" />} label="Phases" value={`${roadmap.phases.length} phases`} />
               </div>
 
-              <div className="glass rounded-2xl p-4 text-sm text-muted-foreground">{roadmap.overview}</div>
+              <div className="glass rounded-lg p-4 text-sm text-muted-foreground">{roadmap.overview}</div>
 
-              <div className="glass rounded-2xl p-6 sm:p-8">
+              <div className="glass rounded-lg p-6 sm:p-8">
                 <h3 className="font-display mb-6 text-sm font-semibold sm:text-base">📍 Your Roadmap</h3>
                 <div className="relative">
                   <div className="absolute left-[15px] top-2 bottom-2 w-px bg-border sm:left-[19px]" />
@@ -324,14 +324,14 @@ export default function RoadmapPage() {
               </div>
 
               {roadmap.interviewFocus?.length > 0 && (
-                <div className="glass rounded-2xl p-6">
+                <div className="glass rounded-lg p-6">
                   <h3 className="font-display mb-4 text-sm font-semibold sm:text-base">🎯 What Interviewers Actually Ask</h3>
                   <InterviewFocusGrid items={roadmap.interviewFocus} />
                 </div>
               )}
 
               {roadmap.proTips?.length > 0 && (
-                <div className="glass rounded-2xl p-6">
+                <div className="glass rounded-lg p-6">
                   <h3 className="font-display mb-3 text-sm font-semibold sm:text-base">💡 Pro Tips</h3>
                   <ul className="space-y-2">
                     {roadmap.proTips.map((tip) => (

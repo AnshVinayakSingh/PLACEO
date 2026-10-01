@@ -37,8 +37,8 @@ function Orb({ size = 1.6 }: { size?: number }) {
         <mesh ref={meshRef}>
           <icosahedronGeometry args={[size, 8]} />
           <MeshDistortMaterial
-            color="#6d5bfa"
-            emissive="#3d2fb8"
+            color="#e8683f"
+            emissive="#8a2d12"
             emissiveIntensity={0.4}
             distort={0.45}
             speed={1.8}
@@ -47,7 +47,7 @@ function Orb({ size = 1.6 }: { size?: number }) {
           />
         </mesh>
       </Float>
-      <Sparkles count={60} scale={5.5} size={2.5} speed={0.3} color="#6ee3ff" opacity={0.6} />
+      <Sparkles count={60} scale={5.5} size={2.5} speed={0.3} color="#f2d9a8" opacity={0.6} />
     </group>
   )
 }
@@ -56,8 +56,8 @@ function Lights() {
   return (
     <>
       <ambientLight intensity={0.5} />
-      <pointLight position={[4, 4, 4]} intensity={40} color="#7dd3fc" />
-      <pointLight position={[-4, -3, -4]} intensity={25} color="#a78bfa" />
+      <pointLight position={[4, 4, 4]} intensity={40} color="#ffb48f" />
+      <pointLight position={[-4, -3, -4]} intensity={25} color="#c44a2a" />
     </>
   )
 }
@@ -97,12 +97,12 @@ export function AiOrbAmbient({ className }: { className?: string }) {
       <Canvas camera={{ position: [0, 0, 5.5], fov: 45 }} dpr={[1, 1.25]} gl={{ alpha: true }}>
         <Suspense fallback={null}>
           <ambientLight intensity={0.6} />
-          <pointLight position={[3, 3, 3]} intensity={20} color="#7dd3fc" />
+          <pointLight position={[3, 3, 3]} intensity={20} color="#ffb48f" />
           <Float speed={1.2} rotationIntensity={0.2} floatIntensity={0.6}>
             <mesh>
               <icosahedronGeometry args={[1.1, 6]} />
               <MeshDistortMaterial
-                color="#6d5bfa"
+                color="#e8683f"
                 distort={0.35}
                 speed={1.4}
                 roughness={0.25}

@@ -91,7 +91,7 @@ export function GDInviteProvider() {
             initial={{ opacity: 0, y: -30, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.9 }}
-            className="fixed left-1/2 top-6 z-[100] w-[92%] max-w-sm -translate-x-1/2 rounded-2xl border border-cyan-400/40 bg-slate-950/95 p-4 shadow-2xl shadow-cyan-500/20 backdrop-blur-xl"
+            className="fixed left-1/2 top-6 z-[100] w-[92%] max-w-sm -translate-x-1/2 rounded-lg border border-primary/40 bg-slate-950/95 p-4   "
           >
             <div className="flex items-center gap-3">
               <span className="brand-gradient flex size-11 shrink-0 items-center justify-center rounded-xl text-white">
@@ -129,7 +129,7 @@ export function GDInviteProvider() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="mb-3 w-72 rounded-2xl border border-white/10 bg-slate-950/95 p-3 shadow-2xl backdrop-blur-xl"
+                className="mb-3 w-72 rounded-lg border border-white/10 bg-slate-950/95 p-3  "
               >
                 <p className="mb-2 px-1 text-xs font-semibold text-slate-300">Pending GD Invites</p>
                 <div className="space-y-2">
@@ -159,7 +159,7 @@ export function GDInviteProvider() {
           </AnimatePresence>
           <button
             onClick={() => setShowPendingList((v) => !v)}
-            className="brand-gradient glow-ring flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-bold text-white shadow-xl"
+            className="brand-gradient glow-ring flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-bold text-white "
           >
             <Users className="size-4" /> {pendingInvites.length} GD invite{pendingInvites.length !== 1 ? 's' : ''}
           </button>

@@ -27,11 +27,6 @@ export function DashboardShell() {
 
   return (
     <div className="relative flex min-h-dvh">
-      {/* ambient background orbs */}
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="animate-float-orb absolute -left-20 top-1/4 size-96 rounded-full bg-brand-blue/10 blur-3xl" />
-        <div className="animate-float-orb absolute -right-16 top-2/3 size-96 rounded-full bg-brand-purple/10 blur-3xl [animation-delay:-6s]" />
-      </div>
 
       <Sidebar
         collapsed={collapsed}
@@ -49,16 +44,16 @@ export function DashboardShell() {
           <div className="mx-auto max-w-7xl">
             {/* Welcome header */}
             <motion.div
-              initial={{ opacity: 0, y: 14 }}
+              initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 0.3 }}
               className="mb-6"
             >
-              <h1 className="font-display text-2xl font-bold tracking-tight md:text-3xl">
-                Welcome back, <span className="text-gradient">{firstName}</span>
+              <h1 className="font-display text-3xl font-semibold tracking-[-0.02em] md:text-4xl">
+                Welcome back, <span className="text-gradient">{firstName}</span>.
               </h1>
               <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-                Here's where things stand — pick up where you left off.
+                Here is where things stand. Pick up where you left off.
               </p>
             </motion.div>
 

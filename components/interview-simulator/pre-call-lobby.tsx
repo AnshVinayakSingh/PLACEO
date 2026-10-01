@@ -102,7 +102,7 @@ export function PreCallLobby({ track, level, questionCount, onJoinCall, onCancel
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <div className="rounded-3xl border border-white/10 bg-slate-950/80 p-6 sm:p-8 backdrop-blur-xl shadow-2xl">
+      <div className="rounded-xl border border-white/10 bg-slate-950/80 p-6 sm:p-8  ">
         <div className="mb-6 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400 mb-2">
             <ShieldCheck className="size-3.5" />
@@ -117,7 +117,7 @@ export function PreCallLobby({ track, level, questionCount, onJoinCall, onCancel
         </div>
 
         {/* Video Preview & Call Controls */}
-        <div className="relative mx-auto aspect-video max-w-2xl overflow-hidden rounded-3xl border-2 border-white/15 bg-slate-900 shadow-2xl">
+        <div className="relative mx-auto aspect-video max-w-2xl overflow-hidden rounded-xl border-2 border-white/15 bg-slate-900 ">
           {stream && cameraEnabled ? (
             <video
               ref={videoRef}
@@ -135,7 +135,7 @@ export function PreCallLobby({ track, level, questionCount, onJoinCall, onCancel
           )}
 
           {/* HUD Overlay Bar */}
-          <div className="absolute inset-x-4 bottom-4 flex items-center justify-between rounded-2xl bg-slate-950/80 px-4 py-2.5 backdrop-blur-md border border-white/10">
+          <div className="absolute inset-x-4 bottom-4 flex items-center justify-between rounded-lg bg-slate-950/80 px-4 py-2.5  border border-white/10">
             {/* Mic Meter */}
             <div className="flex items-center gap-2">
               <Mic className={`size-4 ${micVolume > 10 ? 'text-emerald-400 animate-pulse' : 'text-slate-400'}`} />
@@ -200,7 +200,7 @@ export function PreCallLobby({ track, level, questionCount, onJoinCall, onCancel
           <div className="flex items-center gap-3">
             <button
               onClick={onCancel}
-              className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-xs font-semibold text-slate-400 hover:bg-white/10 hover:text-white"
+              className="rounded-lg border border-white/10 bg-white/5 px-5 py-3 text-xs font-semibold text-slate-400 hover:bg-white/10 hover:text-white"
             >
               Back to Setup
             </button>
@@ -208,7 +208,7 @@ export function PreCallLobby({ track, level, questionCount, onJoinCall, onCancel
             <button
               onClick={handleJoin}
               disabled={!stream}
-              className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 px-7 py-3 text-sm font-bold text-slate-950 shadow-xl shadow-emerald-500/25 transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-600 px-7 py-3 text-sm font-bold text-slate-950   transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
             >
               <span>Join Interview Call</span>
               <ArrowRight className="size-4" />

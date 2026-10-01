@@ -187,7 +187,7 @@ export default function SignupPage() {
               type="checkbox"
               checked={agree}
               onChange={(e) => setAgree(e.target.checked)}
-              className="mt-0.5 size-4 rounded border-border accent-[oklch(0.62_0.2_265)]"
+              className="mt-0.5 size-4 rounded border-border accent-[var(--primary)]"
             />
             I agree to the{' '}
             <Link href="#" className="text-brand-cyan hover:underline">

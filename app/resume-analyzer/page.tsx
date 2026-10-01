@@ -168,7 +168,7 @@ export default function ResumeAnalyzerPage() {
     >
       <div className="space-y-4">
         {/* Step 1: Job description */}
-        <div className="glass rounded-2xl p-6">
+        <div className="glass rounded-lg p-6">
           <h3 className="font-display flex items-center gap-2 text-sm font-semibold">
             <Briefcase className="size-4 text-brand-cyan" />
             1. Enter the job description
@@ -183,7 +183,7 @@ export default function ResumeAnalyzerPage() {
         </div>
 
         {/* Step 2: Resume upload */}
-        <div className="glass rounded-2xl p-6">
+        <div className="glass rounded-lg p-6">
           <h3 className="font-display flex items-center gap-2 text-sm font-semibold">
             <FileText className="size-4 text-brand-cyan" />
             2. Upload your resume
@@ -267,7 +267,7 @@ export default function ResumeAnalyzerPage() {
               className="space-y-4"
             >
               {/* Score + verdict */}
-              <div className="glass rounded-2xl p-6 sm:p-8">
+              <div className="glass rounded-lg p-6 sm:p-8">
                 <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-around">
                   <ScoreGauge score={analysis.currentShortlistChance} label="Current shortlist chance" />
                   <ArrowRight className="hidden size-6 shrink-0 text-muted-foreground sm:block" />
@@ -281,7 +281,7 @@ export default function ResumeAnalyzerPage() {
 
               {/* Strengths */}
               {analysis.strengths.length > 0 && (
-                <div className="glass rounded-2xl p-6">
+                <div className="glass rounded-lg p-6">
                   <h3 className="font-display flex items-center gap-2 text-sm font-semibold">
                     <CheckCircle2 className="size-4 text-emerald-400" />
                     What&apos;s already working
@@ -299,7 +299,7 @@ export default function ResumeAnalyzerPage() {
 
               {/* Format issues */}
               {analysis.formatIssues.length > 0 && (
-                <div className="glass rounded-2xl p-6">
+                <div className="glass rounded-lg p-6">
                   <h3 className="font-display flex items-center gap-2 text-sm font-semibold">
                     <AlertTriangle className="size-4 text-amber-400" />
                     Format & ATS issues
@@ -320,7 +320,7 @@ export default function ResumeAnalyzerPage() {
 
               {/* Missing keywords + swaps */}
               {(analysis.missingKeywords.length > 0 || analysis.keywordsToReplace.length > 0) && (
-                <div className="glass rounded-2xl p-6">
+                <div className="glass rounded-lg p-6">
                   <h3 className="font-display flex items-center gap-2 text-sm font-semibold">
                     <Wrench className="size-4 text-brand-cyan" />
                     Keywords
@@ -367,7 +367,7 @@ export default function ResumeAnalyzerPage() {
 
               {/* Skills to add */}
               {analysis.skillsToAdd.length > 0 && (
-                <div className="glass rounded-2xl p-6">
+                <div className="glass rounded-lg p-6">
                   <h3 className="font-display flex items-center gap-2 text-sm font-semibold">
                     <Lightbulb className="size-4 text-amber-400" />
                     Skills to actually go learn
@@ -387,7 +387,7 @@ export default function ResumeAnalyzerPage() {
 
               {/* Weak projects */}
               {analysis.weakProjects.length > 0 && (
-                <div className="glass rounded-2xl p-6">
+                <div className="glass rounded-lg p-6">
                   <h3 className="font-display flex items-center gap-2 text-sm font-semibold">
                     <XCircle className="size-4 text-destructive" />
                     Weak projects on your resume
@@ -406,7 +406,7 @@ export default function ResumeAnalyzerPage() {
 
               {/* Recommended projects */}
               {analysis.recommendedProjects.length > 0 && (
-                <div className="glass rounded-2xl p-6">
+                <div className="glass rounded-lg p-6">
                   <h3 className="font-display flex items-center gap-2 text-sm font-semibold">
                     <TrendingUp className="size-4 text-emerald-400" />
                     Build these instead

@@ -117,7 +117,7 @@ function LoginForm() {
         </div>
 
         <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          <input type="checkbox" className="size-4 rounded border-border accent-[oklch(0.62_0.2_265)]" />
+          <input type="checkbox" className="size-4 rounded border-border accent-[var(--primary)]" />
           Remember me
         </label>
 

@@ -164,8 +164,8 @@ export default function InterviewSimulatorPage() {
 
       {/* 4. Strict Evaluating Loader */}
       {view === 'evaluating' && (
-        <div className="mx-auto flex max-w-lg flex-col items-center justify-center rounded-3xl border border-white/10 bg-slate-950/80 p-10 text-center backdrop-blur-xl shadow-2xl">
-          <div className="relative flex size-20 items-center justify-center rounded-2xl bg-brand-blue/20 text-brand-cyan border border-brand-blue/30 shadow-inner mb-6">
+        <div className="mx-auto flex max-w-lg flex-col items-center justify-center rounded-xl border border-white/10 bg-slate-950/80 p-10 text-center  ">
+          <div className="relative flex size-20 items-center justify-center rounded-lg bg-brand-blue/20 text-brand-cyan border border-brand-blue/30 shadow-inner mb-6">
             <Brain className="size-10 animate-pulse" />
           </div>
 
@@ -181,8 +181,8 @@ export default function InterviewSimulatorPage() {
               <CheckCircle2 className="size-4 shrink-0 text-brand-cyan animate-spin" />
               <span>Checking technical accuracy and logic substance...</span>
             </div>
-            <div className="flex items-center gap-2.5 text-xs text-purple-400">
-              <CheckCircle2 className="size-4 shrink-0 text-purple-400 animate-spin" />
+            <div className="flex items-center gap-2.5 text-xs text-primary">
+              <CheckCircle2 className="size-4 shrink-0 text-primary animate-spin" />
               <span>Verifying vocabulary, articulation, and coherence...</span>
             </div>
             <div className="flex items-center gap-2.5 text-xs text-emerald-400">
@@ -195,8 +195,8 @@ export default function InterviewSimulatorPage() {
 
       {/* 4b. Evaluation Failed — retry instead of ever showing a fabricated score */}
       {view === 'evaluation-error' && (
-        <div className="mx-auto flex max-w-lg flex-col items-center justify-center rounded-3xl border border-rose-500/30 bg-slate-950/80 p-10 text-center backdrop-blur-xl shadow-2xl">
-          <div className="relative flex size-16 items-center justify-center rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/30 shadow-inner mb-5">
+        <div className="mx-auto flex max-w-lg flex-col items-center justify-center rounded-xl border border-rose-500/30 bg-slate-950/80 p-10 text-center  ">
+          <div className="relative flex size-16 items-center justify-center rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/30 shadow-inner mb-5">
             <ShieldAlert className="size-8" />
           </div>
           <h2 className="font-display text-xl font-bold text-white">Couldn't Reach the Evaluator</h2>
@@ -208,7 +208,7 @@ export default function InterviewSimulatorPage() {
               setView('evaluating')
               runEvaluation(pendingAnswers, pendingViolations)
             }}
-            className="mt-6 flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 px-6 py-3 text-xs font-bold text-white shadow-xl shadow-cyan-500/25 transition-all hover:scale-105 active:scale-95"
+            className="mt-6 flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-6 py-3 text-xs font-bold   transition-all hover:scale-105 active:scale-95"
           >
             <RotateCcw className="size-4" />
             <span>Retry Evaluation</span>
@@ -228,8 +228,8 @@ export default function InterviewSimulatorPage() {
 
       {/* 6. Disqualified Screen */}
       {view === 'disqualified' && (
-        <div className="mx-auto max-w-xl rounded-3xl border-2 border-rose-500 bg-gradient-to-b from-rose-950/90 via-slate-950 to-black p-8 text-center backdrop-blur-xl shadow-2xl animate-in zoom-in-95">
-          <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/40 shadow-inner mb-5">
+        <div className="mx-auto max-w-xl rounded-xl border-2 border-rose-500 bg-gradient-to-b from-rose-950/90 via-slate-950 to-black p-8 text-center   animate-in zoom-in-95">
+          <div className="mx-auto flex size-16 items-center justify-center rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/40 shadow-inner mb-5">
             <ShieldAlert className="size-8 animate-bounce" />
           </div>
 
@@ -241,7 +241,7 @@ export default function InterviewSimulatorPage() {
             Disqualified by Proctor AI
           </h2>
 
-          <div className="mt-4 rounded-2xl border border-rose-500/30 bg-rose-950/40 p-4 text-xs text-rose-200 text-left leading-relaxed">
+          <div className="mt-4 rounded-lg border border-rose-500/30 bg-rose-950/40 p-4 text-xs text-rose-200 text-left leading-relaxed">
             <p className="font-bold mb-1">Disqualification Log:</p>
             <p>
               {disqualificationReason || 'Candidate repeatedly looked away from camera or tilted down towards external devices/notes after receiving Strike 1 warning.'}
@@ -259,7 +259,7 @@ export default function InterviewSimulatorPage() {
           <div className="mt-6 flex items-center justify-center gap-3">
             <button
               onClick={() => setView('setup')}
-              className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 px-6 py-3 text-xs font-bold text-white shadow-xl shadow-cyan-500/25 transition-all hover:scale-105 active:scale-95"
+              className="flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-6 py-3 text-xs font-bold   transition-all hover:scale-105 active:scale-95"
             >
               <RotateCcw className="size-4" />
               <span>Retry New Call (Follow Proctor Rules)</span>

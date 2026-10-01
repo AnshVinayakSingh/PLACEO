@@ -119,7 +119,7 @@ export function Topbar({ onToggleSidebar, onOpenMobile }: TopbarProps) {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.98 }}
                 transition={{ duration: 0.16 }}
-                className="glass-strong absolute right-0 mt-2 w-52 overflow-hidden rounded-xl p-1.5 shadow-2xl"
+                className="glass-strong absolute right-0 mt-2 w-52 overflow-hidden rounded-xl p-1.5 "
               >
                 <div className="border-b border-border px-3 py-2">
                   <p className="text-sm font-medium">{user?.name ?? 'Student'}</p>

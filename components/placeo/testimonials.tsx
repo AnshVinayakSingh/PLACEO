@@ -1,9 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
 import Image from 'next/image'
-import { AnimatePresence, motion } from 'motion/react'
-import { ChevronLeft, ChevronRight, Quote } from 'lucide-react'
 import { Reveal } from './reveal'
 
 type Testimonial = {
@@ -16,28 +13,28 @@ type Testimonial = {
 const testimonials: Testimonial[] = [
   {
     quote:
-      'PLACEO turned my scattered prep into a clear roadmap. The mock interviews felt scarily real — I walked into my Google loop already calm.',
+      'My prep was scattered across five tabs. The roadmap put it in order, and the mock interviews made the real loop feel familiar.',
     name: 'Ananya Sharma',
     role: 'SDE Intern @ Google',
     avatar: '/avatar-1.png',
   },
   {
     quote:
-      'The resume analyzer bumped my ATS score from 54 to 91. I started getting callbacks within a week. This is the edge every student needs.',
+      'The resume analyzer took my ATS score from 54 to 91. Callbacks started inside a week.',
     name: 'Marcus Johnson',
     role: 'Data Analyst @ Stripe',
     avatar: '/avatar-2.png',
   },
   {
     quote:
-      'The skill radar showed exactly where I was weak. Three weeks of targeted practice later, I cleared my dream product role.',
+      'The skill chart showed exactly where I was weak. Three weeks of focused practice later I cleared the product round.',
     name: 'Mei Lin',
     role: 'APM @ Notion',
     avatar: '/avatar-3.png',
   },
   {
     quote:
-      'GD Simulator is genius. Practicing with AI participants killed my nerves completely. I led my actual group discussion with confidence.',
+      'Practising GDs with AI participants took the edge off my nerves. In the real one, I spoke first.',
     name: 'David Müller',
     role: 'Consultant @ McKinsey',
     avatar: '/avatar-4.png',
@@ -45,98 +42,54 @@ const testimonials: Testimonial[] = [
 ]
 
 export function Testimonials() {
-  const [index, setIndex] = useState(0)
-  const count = testimonials.length
-
-  const next = useCallback(() => setIndex((i) => (i + 1) % count), [count])
-  const prev = () => setIndex((i) => (i - 1 + count) % count)
-
-  useEffect(() => {
-    const id = setInterval(next, 6000)
-    return () => clearInterval(id)
-  }, [next])
-
-  const t = testimonials[index]
-
+  const [lead, ...rest] = testimonials
   return (
-    <section id="testimonials" className="relative px-4 py-24">
-      <div className="mx-auto max-w-4xl">
-        <Reveal className="mx-auto max-w-2xl text-center">
-          <span className="glass inline-flex rounded-full px-3 py-1 text-xs font-medium text-muted-foreground">
-            Loved by students
-          </span>
-          <h2 className="font-display mt-4 text-balance text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-            Results that speak for{' '}
-            <span className="text-gradient">themselves</span>
-          </h2>
+    <section id="students" className="relative px-5 py-28">
+      <div className="mx-auto max-w-6xl">
+        <Reveal>
+          <p className="eyebrow">Students</p>
         </Reveal>
 
-        <div className="relative mt-12">
-          <div className="glass-strong glow-ring overflow-hidden rounded-3xl p-8 sm:p-12">
-            <Quote className="size-9 text-[oklch(0.62_0.2_265)]" />
-            <AnimatePresence mode="wait">
-              <motion.blockquote
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4 }}
-              >
-                <p className="mt-4 text-balance text-lg font-medium leading-relaxed sm:text-2xl">
-                  &ldquo;{t.quote}&rdquo;
-                </p>
-                <footer className="mt-8 flex items-center gap-4">
-                  <Image
-                    src={t.avatar || '/placeholder.svg'}
-                    alt={t.name}
-                    width={52}
-                    height={52}
-                    className="size-12 rounded-full border-2 border-white/10 object-cover"
-                  />
-                  <div>
-                    <div className="font-display font-semibold">{t.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {t.role}
-                    </div>
-                  </div>
-                </footer>
-              </motion.blockquote>
-            </AnimatePresence>
-          </div>
+        <Reveal delay={0.05}>
+          <blockquote className="mt-6 max-w-4xl">
+            <p className="font-serif text-3xl leading-[1.15] tracking-[-0.01em] sm:text-5xl">
+              &ldquo;{lead.quote}&rdquo;
+            </p>
+            <footer className="mt-8 flex items-center gap-4">
+              <Image
+                src={lead.avatar || '/placeholder.svg'}
+                alt={lead.name}
+                width={48}
+                height={48}
+                className="size-12 rounded-full object-cover grayscale"
+              />
+              <div className="text-sm">
+                <div className="font-medium">{lead.name}</div>
+                <div className="text-muted-foreground">{lead.role}</div>
+              </div>
+            </footer>
+          </blockquote>
+        </Reveal>
 
-          <div className="mt-6 flex items-center justify-center gap-4">
-            <button
-              type="button"
-              onClick={prev}
-              aria-label="Previous testimonial"
-              className="glass inline-flex size-10 items-center justify-center rounded-full transition-colors hover:bg-white/5"
-            >
-              <ChevronLeft className="size-5" />
-            </button>
-            <div className="flex items-center gap-2">
-              {testimonials.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setIndex(i)}
-                  aria-label={`Go to testimonial ${i + 1}`}
-                  className={
-                    i === index
-                      ? 'brand-gradient h-2 w-6 rounded-full transition-all'
-                      : 'h-2 w-2 rounded-full bg-white/20 transition-all hover:bg-white/40'
-                  }
+        <div className="mt-20 grid gap-px overflow-hidden rounded-lg border border-border bg-border md:grid-cols-3">
+          {rest.map((t, i) => (
+            <Reveal key={t.name} delay={i * 0.05} className="flex flex-col justify-between bg-background p-7">
+              <p className="leading-relaxed text-foreground/90">&ldquo;{t.quote}&rdquo;</p>
+              <div className="mt-8 flex items-center gap-3">
+                <Image
+                  src={t.avatar || '/placeholder.svg'}
+                  alt={t.name}
+                  width={36}
+                  height={36}
+                  className="size-9 rounded-full object-cover grayscale"
                 />
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={next}
-              aria-label="Next testimonial"
-              className="glass inline-flex size-10 items-center justify-center rounded-full transition-colors hover:bg-white/5"
-            >
-              <ChevronRight className="size-5" />
-            </button>
-          </div>
+                <div className="text-sm">
+                  <div className="font-medium">{t.name}</div>
+                  <div className="text-xs text-muted-foreground">{t.role}</div>
+                </div>
+              </div>
+            </Reveal>
+          ))}
         </div>
       </div>
     </section>

@@ -17,7 +17,7 @@ export default function GlobalError({
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-background px-4 text-center text-foreground">
-      <span className="flex size-14 items-center justify-center rounded-2xl bg-destructive/15 text-destructive">
+      <span className="flex size-14 items-center justify-center rounded-lg bg-destructive/15 text-destructive">
         <AlertTriangle className="size-7" />
       </span>
       <div>
@@ -36,7 +36,7 @@ export default function GlobalError({
         </button>
         <Link
           href="/dashboard"
-          className="flex items-center gap-2 rounded-xl bg-[oklch(0.62_0.2_265)] px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90"
+          className="flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90"
         >
           <Home className="size-4" />
           Dashboard

@@ -28,8 +28,29 @@
   --color-brand-blue: var(--brand-blue);
   --color-brand-cyan: var(--brand-cyan);
 
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-onest), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-onest), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-instrument), ui-serif, Georgia, serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, monospace;
+
+
+  /* Warm neutral override: slate-* / sky-* used in call rooms now follow the brand palette */
+  --color-slate-50: oklch(0.975 0.006 85);
+  --color-slate-100: oklch(0.95 0.008 85);
+  --color-slate-200: oklch(0.9 0.01 85);
+  --color-slate-300: oklch(0.82 0.012 80);
+  --color-slate-400: oklch(0.7 0.012 80);
+  --color-slate-500: oklch(0.57 0.012 70);
+  --color-slate-600: oklch(0.43 0.01 65);
+  --color-slate-700: oklch(0.33 0.009 60);
+  --color-slate-800: oklch(0.26 0.008 55);
+  --color-slate-900: oklch(0.2 0.007 55);
+  --color-slate-950: oklch(0.15 0.006 55);
+  --color-sky-200: oklch(0.9 0.05 70);
+  --color-sky-300: oklch(0.83 0.09 70);
+  --color-sky-400: oklch(0.74 0.14 50);
+  --color-sky-500: oklch(0.69 0.185 40);
+  --color-sky-900: oklch(0.3 0.07 40);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -42,40 +63,43 @@
 :root {
   color-scheme: dark;
 
-  /* Deep navy/black base */
-  --background: oklch(0.13 0.03 275);
-  --foreground: oklch(0.97 0.01 275);
+  /* Warm graphite, not navy. Paper-white text, one vermilion accent. */
+  --background: oklch(0.155 0.006 55);
+  --foreground: oklch(0.955 0.012 85);
 
-  --card: oklch(0.18 0.035 275);
-  --card-foreground: oklch(0.97 0.01 275);
-  --popover: oklch(0.16 0.035 275);
-  --popover-foreground: oklch(0.97 0.01 275);
+  --card: oklch(0.19 0.007 55);
+  --card-foreground: oklch(0.955 0.012 85);
+  --popover: oklch(0.175 0.007 55);
+  --popover-foreground: oklch(0.955 0.012 85);
 
-  /* Neon blue primary */
-  --primary: oklch(0.62 0.2 265);
-  --primary-foreground: oklch(0.98 0.01 275);
+  --primary: oklch(0.69 0.185 40);
+  --primary-foreground: oklch(0.16 0.01 50);
 
-  --secondary: oklch(0.24 0.04 275);
-  --secondary-foreground: oklch(0.97 0.01 275);
+  --secondary: oklch(0.235 0.008 55);
+  --secondary-foreground: oklch(0.955 0.012 85);
 
-  --muted: oklch(0.22 0.035 275);
-  --muted-foreground: oklch(0.72 0.03 275);
+  --muted: oklch(0.225 0.008 55);
+  --muted-foreground: oklch(0.7 0.012 80);
 
-  --accent: oklch(0.62 0.24 300);
-  --accent-foreground: oklch(0.98 0.01 275);
+  --accent: oklch(0.69 0.185 40);
+  --accent-foreground: oklch(0.16 0.01 50);
 
   --destructive: oklch(0.62 0.22 25);
 
-  --border: oklch(0.98 0.02 275 / 12%);
-  --input: oklch(0.98 0.02 275 / 15%);
-  --ring: oklch(0.62 0.2 265);
+  --border: oklch(0.95 0.015 85 / 11%);
+  --input: oklch(0.95 0.015 85 / 14%);
+  --ring: oklch(0.69 0.185 40);
 
-  --radius: 0.9rem;
+  --radius: 0.4rem;
 
-  /* Brand gradient stops */
-  --brand-purple: oklch(0.62 0.24 300);
-  --brand-blue: oklch(0.62 0.2 265);
-  --brand-cyan: oklch(0.75 0.15 220);
+  /* Legacy "brand" names kept so existing components inherit the new palette.
+     purple -> brick, blue -> vermilion, cyan -> sand. */
+  --brand-purple: oklch(0.6 0.16 28);
+  --brand-blue: oklch(0.69 0.185 40);
+  --brand-cyan: oklch(0.83 0.09 85);
+
+  --ink-soft: oklch(0.58 0.012 80);
+  --rule: oklch(0.95 0.015 85 / 9%);
 }
 
 @layer base {
@@ -85,29 +109,32 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     overflow-x: hidden;
+    font-feature-settings: 'ss01', 'cv11';
+    text-rendering: optimizeLegibility;
   }
   html {
     scroll-behavior: smooth;
     overflow-x: hidden;
   }
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+  ::selection {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
 }
 
 @layer utilities {
+  /* Emphasis is colour + serif italic, not a rainbow gradient. */
   .text-gradient {
-    background-image: linear-gradient(
-      100deg,
-      oklch(0.75 0.15 220),
-      oklch(0.62 0.2 265),
-      oklch(0.65 0.24 300)
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    color: var(--primary);
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: -0.01em;
   }
 
-  /* Native <select> dropdowns don't inherit .glass's transparent gradient background —
-     browsers render the popup list using an explicit background-color, so without this
-     it falls back to a stark white/light popup regardless of the app's dark theme. */
   select {
     color-scheme: dark;
     background-color: var(--card);
@@ -118,72 +145,43 @@
     color: var(--foreground);
   }
 
-  /* Glass with real depth: ambient shadow + directional shadow + inset top highlight + inset bottom shade */
+  /* Surfaces: flat, hairline-bordered. No blur, no inner highlights, no drop-glow. */
   .glass {
-    background: linear-gradient(
-      165deg,
-      color-mix(in oklch, var(--card) 68%, transparent),
-      color-mix(in oklch, var(--card) 42%, transparent)
-    );
-    backdrop-filter: blur(18px) saturate(140%);
-    -webkit-backdrop-filter: blur(18px) saturate(140%);
-    border: 1px solid oklch(0.98 0.02 275 / 12%);
-    box-shadow:
-      0 1px 0 0 oklch(1 0 0 / 8%) inset,
-      0 -1px 0 0 oklch(0 0 0 / 20%) inset,
-      0 24px 48px -20px oklch(0.05 0.02 275 / 65%),
-      0 4px 12px -4px oklch(0.05 0.02 275 / 40%);
-    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.35s ease;
+    background: var(--card);
+    border: 1px solid var(--border);
+    transition: border-color 0.2s ease, background-color 0.2s ease;
   }
-
   .glass-strong {
-    background: linear-gradient(
-      165deg,
-      color-mix(in oklch, var(--card) 88%, transparent),
-      color-mix(in oklch, var(--card) 62%, transparent)
-    );
-    backdrop-filter: blur(24px) saturate(150%);
-    -webkit-backdrop-filter: blur(24px) saturate(150%);
-    border: 1px solid oklch(0.98 0.02 275 / 16%);
-    box-shadow:
-      0 1px 0 0 oklch(1 0 0 / 10%) inset,
-      0 -1px 0 0 oklch(0 0 0 / 25%) inset,
-      0 32px 64px -24px oklch(0.05 0.02 275 / 75%),
-      0 8px 16px -6px oklch(0.05 0.02 275 / 45%);
+    background: oklch(0.205 0.008 55);
+    border: 1px solid oklch(0.95 0.015 85 / 15%);
   }
-
-  /* Elevate on hover for interactive glass cards — real perceived lift, not just a color change */
   .glass-hover {
-    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.35s ease;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
   }
   .glass-hover:hover {
-    transform: translateY(-6px);
-    border-color: oklch(0.98 0.02 275 / 22%);
-    box-shadow:
-      0 1px 0 0 oklch(1 0 0 / 12%) inset,
-      0 -1px 0 0 oklch(0 0 0 / 20%) inset,
-      0 40px 70px -20px oklch(0.05 0.02 275 / 80%),
-      0 0 0 1px oklch(0.62 0.2 265 / 25%),
-      0 12px 32px -8px oklch(0.62 0.2 265 / 30%);
+    border-color: oklch(0.69 0.185 40 / 45%);
+    background: oklch(0.21 0.009 55);
   }
 
+  /* Primary action: solid, matte, no glow. */
   .brand-gradient {
-    background-image: linear-gradient(
-      100deg,
-      oklch(0.62 0.2 265),
-      oklch(0.65 0.24 300)
-    );
-    box-shadow:
-      0 1px 0 0 oklch(1 0 0 / 25%) inset,
-      0 12px 24px -8px oklch(0.62 0.2 265 / 55%);
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    transition: background-color 0.15s ease, transform 0.15s ease;
+  }
+  a.brand-gradient:hover,
+  button.brand-gradient:hover:not(:disabled) {
+    background-color: oklch(0.74 0.18 42);
+  }
+  a.brand-gradient:active,
+  button.brand-gradient:active:not(:disabled) {
+    transform: translateY(1px);
   }
 
   .glow-ring {
-    box-shadow: 0 0 0 1px oklch(0.62 0.2 265 / 30%),
-      0 8px 40px -8px oklch(0.62 0.2 265 / 45%);
+    box-shadow: 0 0 0 1px oklch(0.95 0.015 85 / 8%);
   }
 
-  /* Subtle film-grain noise overlay to break flatness on large gradient/blur surfaces */
   .grain-overlay {
     position: relative;
   }
@@ -192,13 +190,24 @@
     position: absolute;
     inset: 0;
     pointer-events: none;
-    opacity: 0.035;
+    opacity: 0.05;
     mix-blend-mode: overlay;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
   .perspective-1000 {
     perspective: 1000px;
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .rule-top {
+    border-top: 1px solid var(--rule);
   }
 }
 
@@ -216,7 +225,9 @@
 }
 
 .animate-float-orb {
-  animation: float-orb 18s ease-in-out infinite;
+  /* ambient orbs retired; any leftover usage is static */
+  animation: none;
+  display: none;
 }
 
 @keyframes marquee-x {

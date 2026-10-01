@@ -1,93 +1,118 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'motion/react'
-import { ArrowRight, Play } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { AuroraBackground } from './aurora-background'
-import { TiltCard } from './tilt-card'
 
-const ease = [0.21, 0.47, 0.32, 0.98] as const
+const ease = [0.25, 0.1, 0.25, 1] as const
+
+const roadmap = [
+  { week: 'Wk 1', task: 'Arrays, hashing, two pointers', done: true },
+  { week: 'Wk 2', task: 'Trees and graph traversal', done: true },
+  { week: 'Wk 3', task: 'DP patterns: knapsack, LIS', done: false },
+  { week: 'Wk 4', task: 'System design basics + 2 mock interviews', done: false },
+]
 
 export function Hero() {
   return (
-    <section
-      id="top"
-      className="relative overflow-hidden px-4 pb-20 pt-36 sm:pt-40 lg:pb-28"
-    >
+    <section id="top" className="relative px-5 pb-24 pt-32 sm:pt-40">
       <AuroraBackground />
 
-      <div className="relative mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
-        {/* Left copy */}
-        <div className="text-center lg:text-left">
-          <motion.h1
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease }}
-            className="font-display mt-2 text-balance text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl"
+      <div className="relative mx-auto grid max-w-6xl gap-16 lg:grid-cols-12">
+        <div className="lg:col-span-7">
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, ease }}
+            className="eyebrow"
           >
-            Your <span className="text-gradient">Career Operating System</span>{' '}
-            For Placements
+            Placement prep, in one place
+          </motion.p>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.05, ease }}
+            className="font-display mt-5 text-[2.75rem] font-semibold leading-[0.98] tracking-[-0.03em] sm:text-6xl lg:text-[5.25rem]"
+          >
+            Stop guessing
+            <br />
+            what to <span className="text-gradient">practise</span> next.
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.08, ease }}
-            className="mx-auto mt-6 max-w-xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg lg:mx-0"
+            transition={{ duration: 0.55, delay: 0.12, ease }}
+            className="mt-7 max-w-lg text-lg leading-relaxed text-muted-foreground"
           >
-            Plan your roadmap, practice mock interviews, track your skills, and
-            get resume feedback — all in one place, built for students
-            preparing for placements.
+            placeo reads your skills and your target role, writes a week-by-week
+            plan, and then lets you rehearse the real thing: mock interviews,
+            group discussions, resume checks.
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.16, ease }}
-            className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start"
+            transition={{ duration: 0.55, delay: 0.2, ease }}
+            className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-3"
           >
             <Link
               href="/signup"
-              className="brand-gradient glow-ring group inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-transform hover:scale-[1.03] sm:w-auto"
+              className="brand-gradient group inline-flex items-center gap-2 rounded-md px-6 py-3.5 text-sm font-medium"
             >
-              Get Started Free
+              Build my plan
               <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <a
-              href="#features"
-              className="glass inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-white/5 sm:w-auto"
+              href="#modules"
+              className="text-sm text-foreground underline decoration-border underline-offset-[6px] transition-colors hover:decoration-primary"
             >
-              <Play className="size-4" />
-              See how it works
+              See what is inside
             </a>
           </motion.div>
         </div>
 
-        {/* Right mockup */}
+        {/* A real slice of the product, built in HTML, not a floating screenshot */}
         <motion.div
-          initial={{ opacity: 0, y: 40, rotateX: 12 }}
-          animate={{ opacity: 1, y: 0, rotateX: 0 }}
-          transition={{ duration: 0.9, delay: 0.15, ease }}
-          className="relative [perspective:1200px]"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.25, ease }}
+          className="lg:col-span-5 lg:pt-6"
         >
-          <TiltCard className="group">
-            <motion.div
-              animate={{ y: [0, -14, 0] }}
-              transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-              className="glass-strong glow-ring relative rounded-2xl p-2 shadow-2xl"
-            >
-              <Image
-                src="/placeo-dashboard.png"
-                alt="PLACEO dashboard preview showing an AI career roadmap, skill radar, and interview scores"
-                width={900}
-                height={640}
-                priority
-                className="w-full rounded-xl"
-                style={{ transform: 'translateZ(40px)' }}
-              />
-            </motion.div>
-          </TiltCard>
+          <div className="glass rounded-lg">
+            <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+              <span className="eyebrow">Your roadmap / SDE</span>
+              <span className="font-mono text-xs text-primary">50%</span>
+            </div>
+            <ol className="divide-y divide-border">
+              {roadmap.map((r) => (
+                <li key={r.week} className="flex items-start gap-4 px-5 py-4">
+                  <span className="font-mono text-xs text-muted-foreground pt-0.5 w-9 shrink-0">
+                    {r.week}
+                  </span>
+                  <span
+                    className={
+                      r.done
+                        ? 'text-sm text-muted-foreground line-through decoration-border'
+                        : 'text-sm text-foreground'
+                    }
+                  >
+                    {r.task}
+                  </span>
+                </li>
+              ))}
+            </ol>
+            <div className="border-t border-border px-5 py-4">
+              <div className="h-1 w-full bg-secondary">
+                <div className="h-full w-1/2 bg-primary" />
+              </div>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Sample plan. Yours is generated from your own skill check.
+              </p>
+            </div>
+          </div>
         </motion.div>
       </div>
     </section>
