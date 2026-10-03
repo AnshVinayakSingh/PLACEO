@@ -1,128 +1,119 @@
 'use client'
 
-import { useLayoutEffect, useRef } from 'react'
-import dynamic from 'next/dynamic'
 import Link from 'next/link'
+import { motion } from 'motion/react'
 import { ArrowRight } from 'lucide-react'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { AuroraBackground } from './aurora-background'
-import { sceneState } from '@/components/three/scene-state'
 
-const RoadmapScene = dynamic(() => import('@/components/three/roadmap-scene'), { ssr: false })
+const ease = [0.25, 0.1, 0.25, 1] as const
 
-if (typeof window !== 'undefined') gsap.registerPlugin(ScrollTrigger)
+const roadmap = [
+  { week: 'Wk 1', task: 'Arrays, hashing, two pointers', done: true },
+  { week: 'Wk 2', task: 'Trees and graph traversal', done: true },
+  { week: 'Wk 3', task: 'DP patterns: knapsack, LIS', done: false },
+  { week: 'Wk 4', task: 'System design basics + 2 mock interviews', done: false },
+]
 
 export function Hero() {
-  const root = useRef<HTMLElement>(null)
-
-  useLayoutEffect(() => {
-    const el = root.current
-    if (!el) return
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
-    const ctx = gsap.context(() => {
-      if (!reduce) {
-        gsap.from('[data-hero-line]', { yPercent: 105, duration: 0.95, ease: 'power3.out', stagger: 0.1 })
-        gsap.from('[data-hero-fade]', { opacity: 0, y: 14, duration: 0.7, ease: 'power2.out', stagger: 0.08, delay: 0.5 })
-        gsap.from('[data-hero-scene]', { opacity: 0, duration: 1.2, delay: 0.3, ease: 'power1.out' })
-      }
-      // Scrolling out of the hero pushes the roadmap line forward.
-      ScrollTrigger.create({
-        trigger: el,
-        start: 'top top',
-        end: 'bottom top',
-        scrub: true,
-        onUpdate: (self) => {
-          sceneState.progress = self.progress
-        },
-      })
-    }, el)
-
-    return () => {
-      ctx.revert()
-      sceneState.progress = 0
-    }
-  }, [])
-
   return (
-    <section
-      id="top"
-      ref={root}
-      className="relative px-5 pb-20 pt-28 sm:pt-36 lg:flex lg:min-h-[100dvh] lg:items-center lg:pb-24 lg:pt-28"
-    >
+    <section id="top" className="relative px-5 pb-24 pt-32 sm:pt-40">
       <AuroraBackground />
 
-      <div className="relative mx-auto grid w-full max-w-6xl items-center gap-12 sm:gap-14 lg:grid-cols-12 lg:gap-16 2xl:max-w-7xl">
+      <div className="relative mx-auto grid max-w-6xl gap-16 lg:grid-cols-12">
         <div className="lg:col-span-7">
-          <p data-hero-fade className="eyebrow">
-            Placement prep, in one place
-          </p>
-
-          <h1 className="font-display mt-5 text-[clamp(2.35rem,8.5vw,3.9rem)] font-semibold leading-[0.98] tracking-[-0.03em] lg:text-[clamp(3.25rem,5.4vw,5.25rem)]">
-            <span className="block overflow-hidden pb-[0.1em] -mb-[0.1em]">
-              <span data-hero-line className="block">
-                Stop guessing
-              </span>
-            </span>
-            <span className="block overflow-hidden pb-[0.1em] -mb-[0.1em]">
-              <span data-hero-line className="block">
-                what to <span className="text-gradient">practise</span> next.
-              </span>
-            </span>
-          </h1>
-
-          <p
-            data-hero-fade
-            className="mt-6 max-w-[34rem] text-base leading-relaxed text-muted-foreground sm:mt-7 sm:text-lg"
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, ease }}
+            className="eyebrow"
           >
-            placeo reads your skills and your target role, writes a week-by-week plan, and then
-            lets you rehearse the real thing: mock interviews, group discussions, resume checks.
-          </p>
+            Placement prep, in one place
+          </motion.p>
 
-          <div data-hero-fade className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4 sm:mt-9">
+          <motion.h1
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.05, ease }}
+            className="font-display mt-5 text-[2.75rem] font-semibold leading-[0.98] tracking-[-0.03em] sm:text-6xl lg:text-[5.25rem]"
+          >
+            Stop guessing
+            <br />
+            what to <span className="text-gradient">practise</span> next.
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.12, ease }}
+            className="mt-7 max-w-lg text-lg leading-relaxed text-muted-foreground"
+          >
+            placeo reads your skills and your target role, writes a week-by-week
+            plan, and then lets you rehearse the real thing: mock interviews,
+            group discussions, resume checks.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.2, ease }}
+            className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-3"
+          >
             <Link
               href="/signup"
-              className="brand-gradient group inline-flex min-h-12 items-center gap-2 rounded-md px-6 py-3.5 text-sm font-medium"
+              className="brand-gradient group inline-flex items-center gap-2 rounded-md px-6 py-3.5 text-sm font-medium"
             >
               Build my plan
               <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <a
               href="#modules"
-              className="py-2 text-sm text-foreground underline decoration-border underline-offset-[6px] transition-colors hover:decoration-primary"
+              className="text-sm text-foreground underline decoration-border underline-offset-[6px] transition-colors hover:decoration-primary"
             >
               See what is inside
             </a>
-          </div>
+          </motion.div>
         </div>
 
-        {/* 3D roadmap + a card that overlaps its edge */}
-        <div className="relative lg:col-span-5">
-          <div
-            data-hero-scene
-            className="relative aspect-[5/4] overflow-hidden rounded-lg border border-border bg-card/40 sm:aspect-[16/9] lg:aspect-auto lg:h-[min(36rem,68dvh)]"
-          >
-            <RoadmapScene scrollDriven className="absolute inset-0" />
-          </div>
-
-          <div
-            data-hero-fade
-            className="relative z-10 mx-3 -mt-10 rounded-md border border-border bg-background/95 p-4 sm:mx-6 sm:max-w-xs lg:absolute lg:-left-10 lg:bottom-8 lg:mx-0 lg:mt-0 lg:w-72"
-          >
-            <div className="flex items-center justify-between">
-              <span className="eyebrow">Week 3 · SDE plan</span>
-              <span className="font-mono text-xs tabular-nums text-primary">43%</span>
+        {/* A real slice of the product, built in HTML, not a floating screenshot */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.25, ease }}
+          className="lg:col-span-5 lg:pt-6"
+        >
+          <div className="glass rounded-lg">
+            <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+              <span className="eyebrow">Your roadmap / SDE</span>
+              <span className="font-mono text-xs text-primary">50%</span>
             </div>
-            <p className="mt-3 text-sm">DP patterns: knapsack, LIS</p>
-            <div className="mt-3 h-px w-full bg-border">
-              <div className="h-px w-[43%] bg-primary" />
+            <ol className="divide-y divide-border">
+              {roadmap.map((r) => (
+                <li key={r.week} className="flex items-start gap-4 px-5 py-4">
+                  <span className="font-mono text-xs text-muted-foreground pt-0.5 w-9 shrink-0">
+                    {r.week}
+                  </span>
+                  <span
+                    className={
+                      r.done
+                        ? 'text-sm text-muted-foreground line-through decoration-border'
+                        : 'text-sm text-foreground'
+                    }
+                  >
+                    {r.task}
+                  </span>
+                </li>
+              ))}
+            </ol>
+            <div className="border-t border-border px-5 py-4">
+              <div className="h-1 w-full bg-secondary">
+                <div className="h-full w-1/2 bg-primary" />
+              </div>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Sample plan. Yours is generated from your own skill check.
+              </p>
             </div>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Next: system design basics, 2 mock interviews. Sample plan.
-            </p>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   )

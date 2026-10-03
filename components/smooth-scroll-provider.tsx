@@ -2,35 +2,28 @@
 
 import { useEffect, type ReactNode } from 'react'
 import Lenis from 'lenis'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
-if (typeof window !== 'undefined') gsap.registerPlugin(ScrollTrigger)
-
-/**
- * Lenis drives the scroll; GSAP's ticker drives Lenis; ScrollTrigger listens to Lenis.
- * One clock for everything, so scrubbed animations never drift from the page.
- * Skipped entirely for people who ask the OS for reduced motion.
- */
+/** Site-wide buttery smooth scroll. Pure JS scroll interpolation — no WebGL cost. */
 export function SmoothScrollProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-
     const lenis = new Lenis({
       duration: 1.1,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
-      // Inner scroll areas (chat windows, dropdowns) keep native wheel scrolling.
+      // Reliable fix (per Lenis docs) so inner scrollable areas (chat windows,
+      // dropdowns, etc.) scroll natively with the mouse wheel / trackpad
+      // instead of being hijacked by the page-level smooth scroll.
       allowNestedScroll: true,
     })
 
-    lenis.on('scroll', ScrollTrigger.update)
-    const tick = (time: number) => lenis.raf(time * 1000)
-    gsap.ticker.add(tick)
-    gsap.ticker.lagSmoothing(0)
+    function raf(time: number) {
+      lenis.raf(time)
+      requestAnimationFrame(raf)
+    }
+    const id = requestAnimationFrame(raf)
 
     return () => {
-      gsap.ticker.remove(tick)
+      cancelAnimationFrame(id)
       lenis.destroy()
     }
   }, [])

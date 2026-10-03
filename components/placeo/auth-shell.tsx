@@ -2,11 +2,8 @@
 
 import type { ReactNode } from 'react'
 import Link from 'next/link'
-import dynamic from 'next/dynamic'
 import { motion } from 'motion/react'
 import { Wordmark } from './navbar'
-
-const RoadmapScene = dynamic(() => import('@/components/three/roadmap-scene'), { ssr: false })
 
 type AuthShellProps = {
   children: ReactNode
@@ -37,11 +34,8 @@ export function AuthShell({ children, quote }: AuthShellProps) {
       {/* Right: editorial panel */}
       <div className="relative hidden flex-1 flex-col justify-between border-l border-border bg-card/50 p-14 lg:flex">
         <p className="eyebrow">placeo / career os</p>
-        <div className="relative my-8 min-h-[16rem] flex-1">
-          <RoadmapScene scrollDriven={false} className="absolute inset-0" />
-        </div>
         <div>
-          <p className="font-serif text-3xl leading-[1.15] tracking-[-0.01em] xl:text-4xl">
+          <p className="font-serif text-4xl leading-[1.15] tracking-[-0.01em] xl:text-5xl">
             {quote ??
               'A plan you can follow beats a hundred tabs you will never read.'}
           </p>

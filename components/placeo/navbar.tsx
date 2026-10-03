@@ -1,13 +1,9 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-if (typeof window !== 'undefined') gsap.registerPlugin(ScrollTrigger)
 
 const links = [
   { label: 'Modules', href: '#modules' },
@@ -27,25 +23,6 @@ export function Wordmark({ className }: { className?: string }) {
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
-  const bar = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const el = bar.current
-    if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const tween = gsap.fromTo(
-      el,
-      { scaleX: 0 },
-      {
-        scaleX: 1,
-        ease: 'none',
-        scrollTrigger: { trigger: document.documentElement, start: 'top top', end: 'bottom bottom', scrub: 0.2 },
-      },
-    )
-    return () => {
-      tween.scrollTrigger?.kill()
-      tween.kill()
-    }
-  }, [])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -63,7 +40,7 @@ export function Navbar() {
           : 'border-transparent bg-transparent',
       )}
     >
-      <nav className="mx-auto flex h-16 max-w-6xl 2xl:max-w-7xl items-center justify-between px-5">
+      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
         <a href="#top" aria-label="placeo home">
           <Wordmark />
         </a>
@@ -98,21 +75,16 @@ export function Navbar() {
             onClick={() => setOpen((v) => !v)}
             aria-label="Toggle menu"
             aria-expanded={open}
-            className="inline-flex size-11 items-center justify-center rounded-md border border-border md:hidden"
+            className="inline-flex size-9 items-center justify-center rounded-md border border-border md:hidden"
           >
             {open ? <X className="size-4" /> : <Menu className="size-4" />}
           </button>
         </div>
       </nav>
-      <div
-        ref={bar}
-        aria-hidden="true"
-        className="absolute inset-x-0 bottom-[-1px] h-px origin-left scale-x-0 bg-primary"
-      />
 
       {open && (
         <div className="border-t border-border bg-background md:hidden">
-          <div className="mx-auto flex max-w-6xl 2xl:max-w-7xl flex-col px-5 py-3">
+          <div className="mx-auto flex max-w-6xl flex-col px-5 py-3">
             {links.map((l) => (
               <a
                 key={l.href}

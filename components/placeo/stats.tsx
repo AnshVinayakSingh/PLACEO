@@ -1,13 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { Reveal } from './reveal'
-
-if (typeof window !== 'undefined') gsap.registerPlugin(ScrollTrigger)
-
-const indent = ['md:pl-8', 'md:pl-16', 'md:pl-24']
 
 const steps = [
   {
@@ -35,35 +28,9 @@ const facts = [
 ]
 
 export function Stats() {
-  const list = useRef<HTMLDivElement>(null)
-  const line = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const wrap = list.current
-    const bar = line.current
-    if (!wrap || !bar) return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      gsap.set(bar, { scaleY: 1 })
-      return
-    }
-    const tween = gsap.fromTo(
-      bar,
-      { scaleY: 0 },
-      {
-        scaleY: 1,
-        ease: 'none',
-        scrollTrigger: { trigger: wrap, start: 'top 70%', end: 'bottom 55%', scrub: true },
-      },
-    )
-    return () => {
-      tween.scrollTrigger?.kill()
-      tween.kill()
-    }
-  }, [])
-
   return (
     <section id="process" className="relative border-y border-border bg-card/40 px-5 py-28">
-      <div className="mx-auto max-w-6xl 2xl:max-w-7xl">
+      <div className="mx-auto max-w-6xl">
         <Reveal>
           <p className="eyebrow">How it works</p>
           <h2 className="font-display mt-4 max-w-2xl text-4xl font-semibold leading-[1.05] tracking-[-0.025em] sm:text-5xl">
@@ -71,31 +38,14 @@ export function Stats() {
           </h2>
         </Reveal>
 
-        <div ref={list} className="relative mt-14 border-t border-border">
-          <div
-            ref={line}
-            aria-hidden="true"
-            className="absolute left-0 top-0 h-full w-px origin-top bg-primary"
-          />
-        <ol>
+        <div className="mt-14 grid gap-px overflow-hidden rounded-lg border border-border bg-border md:grid-cols-3">
           {steps.map((s, i) => (
-            <Reveal as="li" key={s.n} delay={i * 0.05}>
-              <div
-                className={`grid items-baseline gap-3 border-b border-border py-8 pl-5 sm:py-9 md:grid-cols-12 md:gap-8 ${indent[i] ?? ''}`}
-              >
-                <span className="font-display text-5xl font-medium leading-none text-primary sm:text-6xl md:col-span-2">
-                  {s.n}
-                </span>
-                <h3 className="font-display text-2xl font-medium tracking-tight md:col-span-4">
-                  {s.title}
-                </h3>
-                <p className="max-w-md leading-relaxed text-muted-foreground md:col-span-6">
-                  {s.body}
-                </p>
-              </div>
+            <Reveal key={s.n} delay={i * 0.05} className="bg-background p-8">
+              <span className="font-display text-5xl font-medium text-primary">{s.n}</span>
+              <h3 className="font-display mt-6 text-xl font-medium">{s.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{s.body}</p>
             </Reveal>
           ))}
-        </ol>
         </div>
 
         <dl className="mt-16 grid grid-cols-2 gap-y-8 lg:grid-cols-4">

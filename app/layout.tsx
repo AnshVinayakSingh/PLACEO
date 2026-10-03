@@ -50,9 +50,7 @@ export const metadata: Metadata = {
     description:
       'The AI career operating system for students. Roadmaps, interview simulation, skill and resume analysis — all in one platform.',
     type: 'website',
-    siteName: 'placeo',
   },
-  icons: { icon: '/icon.svg' },
 }
 
 export const viewport: Viewport = {
@@ -71,7 +69,6 @@ export default function RootLayout({
       className={`dark ${onest.variable} ${bricolage.variable} ${instrument.variable} ${plexMono.variable}`}
     >
       <body className="bg-background antialiased">
-        <a href="#main" className="skip-link">Skip to content</a>
         <SmoothScrollProvider>{children}</SmoothScrollProvider>
         <GDInviteProvider />
         {process.env.NODE_ENV === 'production' && <Analytics />}

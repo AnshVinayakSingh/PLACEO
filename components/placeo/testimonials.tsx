@@ -45,7 +45,7 @@ export function Testimonials() {
   const [lead, ...rest] = testimonials
   return (
     <section id="students" className="relative px-5 py-28">
-      <div className="mx-auto max-w-6xl 2xl:max-w-7xl">
+      <div className="mx-auto max-w-6xl">
         <Reveal>
           <p className="eyebrow">Students</p>
         </Reveal>
@@ -61,7 +61,7 @@ export function Testimonials() {
                 alt={lead.name}
                 width={48}
                 height={48}
-                className="size-12 rounded-md object-cover grayscale"
+                className="size-12 rounded-full object-cover grayscale"
               />
               <div className="text-sm">
                 <div className="font-medium">{lead.name}</div>
@@ -71,30 +71,17 @@ export function Testimonials() {
           </blockquote>
         </Reveal>
 
-        <div className="mt-20 grid gap-6 md:grid-cols-12">
+        <div className="mt-20 grid gap-px overflow-hidden rounded-lg border border-border bg-border md:grid-cols-3">
           {rest.map((t, i) => (
-            <Reveal
-              key={t.name}
-              delay={i * 0.05}
-              className={
-                (i === 0
-                  ? 'md:col-span-7 '
-                  : i === 1
-                    ? 'md:col-span-5 md:mt-14 '
-                    : 'md:col-span-6 md:col-start-4 ') +
-                'border-t border-border pt-6'
-              }
-            >
-              <p className={i === 0 ? 'font-serif text-2xl leading-snug' : 'leading-relaxed text-foreground/90'}>
-                &ldquo;{t.quote}&rdquo;
-              </p>
-              <div className="mt-6 flex items-center gap-3">
+            <Reveal key={t.name} delay={i * 0.05} className="flex flex-col justify-between bg-background p-7">
+              <p className="leading-relaxed text-foreground/90">&ldquo;{t.quote}&rdquo;</p>
+              <div className="mt-8 flex items-center gap-3">
                 <Image
                   src={t.avatar || '/placeholder.svg'}
                   alt={t.name}
                   width={36}
                   height={36}
-                  className="size-9 rounded-md object-cover grayscale"
+                  className="size-9 rounded-full object-cover grayscale"
                 />
                 <div className="text-sm">
                   <div className="font-medium">{t.name}</div>

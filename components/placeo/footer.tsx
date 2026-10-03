@@ -4,19 +4,17 @@ import Link from 'next/link'
 import { Reveal } from './reveal'
 import { Wordmark } from './navbar'
 
-const links = [
-  { label: 'Modules', href: '#modules' },
-  { label: 'How it works', href: '#process' },
-  { label: 'Students', href: '#students' },
-  { label: 'FAQ', href: '#faq' },
-  { label: 'Sign in', href: '/login' },
-  { label: 'Create account', href: '/signup' },
+const columns = [
+  { title: 'Product', links: ['Modules', 'Roadmap', 'Interview simulator'] },
+  { title: 'Company', links: ['About', 'Careers', 'Blog', 'Contact'] },
+  { title: 'Resources', links: ['Help center', 'Community', 'Guides', 'Status'] },
+  { title: 'Legal', links: ['Privacy', 'Terms', 'Security', 'Cookies'] },
 ]
 
 export function Footer() {
   return (
     <footer className="relative border-t border-border px-5 pb-10 pt-24">
-      <div className="mx-auto max-w-6xl 2xl:max-w-7xl">
+      <div className="mx-auto max-w-6xl">
         <Reveal className="grid items-end gap-8 lg:grid-cols-12">
           <h2 className="font-display text-5xl font-semibold leading-[0.98] tracking-[-0.03em] sm:text-7xl lg:col-span-8">
             Your next interview is
@@ -33,7 +31,7 @@ export function Footer() {
           </div>
         </Reveal>
 
-        <div className="mt-24 flex flex-col justify-between gap-10 md:flex-row md:items-end">
+        <div className="mt-24 grid gap-10 md:grid-cols-[1.4fr_repeat(4,1fr)]">
           <div>
             <a href="#top" aria-label="placeo home">
               <Wordmark />
@@ -42,17 +40,24 @@ export function Footer() {
               Placement prep for students: plan, practise, get placed.
             </p>
           </div>
-          <nav aria-label="Footer" className="flex flex-wrap gap-x-7 gap-y-3 text-sm">
-            {links.map((l) => (
-              <Link
-                key={l.label}
-                href={l.href}
-                className="text-muted-foreground transition-colors hover:text-foreground"
-              >
-                {l.label}
-              </Link>
-            ))}
-          </nav>
+
+          {columns.map((col) => (
+            <div key={col.title}>
+              <h3 className="eyebrow">{col.title}</h3>
+              <ul className="mt-4 flex flex-col gap-2.5">
+                {col.links.map((l) => (
+                  <li key={l}>
+                    <a
+                      href="#"
+                      className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      {l}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
         <div className="mt-16 flex flex-col justify-between gap-2 border-t border-border pt-6 text-xs text-muted-foreground sm:flex-row">

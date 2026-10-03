@@ -38,7 +38,7 @@ const modules = [
 export function Features() {
   return (
     <section id="modules" className="relative px-5 py-28">
-      <div className="mx-auto max-w-6xl 2xl:max-w-7xl">
+      <div className="mx-auto max-w-6xl">
         <div className="grid gap-8 lg:grid-cols-12">
           <Reveal className="lg:col-span-5">
             <p className="eyebrow">Modules</p>

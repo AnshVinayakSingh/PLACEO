@@ -10,7 +10,7 @@ export default function Page() {
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-background">
       <Navbar />
-      <main id="main">
+      <main>
         <Hero />
         <Features />
         <Stats />
