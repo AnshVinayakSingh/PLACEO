@@ -1,9 +1,5 @@
 'use client'
 
-import { useState } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
-import { Plus } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { Reveal } from './reveal'
 
 type QA = { q: string; a: string }
@@ -35,61 +31,25 @@ const faqs: QA[] = [
   },
 ]
 
-function FaqItem({ item, index }: { item: QA; index: number }) {
-  const [open, setOpen] = useState(false)
-  return (
-    <Reveal delay={index * 0.03}>
-      <div className="border-b border-border">
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          className="flex w-full items-center justify-between gap-6 py-6 text-left"
-        >
-          <span className="font-display text-lg font-medium tracking-tight">{item.q}</span>
-          <Plus
-            className={cn(
-              'size-5 shrink-0 text-muted-foreground transition-transform duration-200',
-              open && 'rotate-45 text-primary',
-            )}
-          />
-        </button>
-        <AnimatePresence initial={false}>
-          {open && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="overflow-hidden"
-            >
-              <p className="max-w-2xl pb-6 leading-relaxed text-muted-foreground">
-                {item.a}
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </Reveal>
-  )
-}
-
 export function Faq() {
   return (
     <section id="faq" className="relative px-5 py-28">
-      <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-12">
-        <Reveal className="lg:col-span-4">
+      <div className="mx-auto max-w-6xl 2xl:max-w-7xl">
+        <Reveal className="max-w-xl">
           <p className="eyebrow">FAQ</p>
-          <h2 className="font-display mt-4 text-4xl font-semibold leading-[1.05] tracking-[-0.025em]">
+          <h2 className="font-display mt-4 text-4xl font-semibold leading-[1.05] tracking-[-0.025em] sm:text-5xl">
             Before you <span className="text-gradient">sign up</span>
           </h2>
         </Reveal>
 
-        <div className="border-t border-border lg:col-span-8">
+        <dl className="mt-16 grid gap-x-16 gap-y-12 md:grid-cols-2">
           {faqs.map((item, i) => (
-            <FaqItem key={item.q} item={item} index={i} />
+            <Reveal key={item.q} delay={(i % 2) * 0.05} className={i % 2 === 1 ? 'md:mt-10' : ''}>
+              <dt className="font-display text-xl font-medium tracking-tight">{item.q}</dt>
+              <dd className="mt-3 max-w-md leading-relaxed text-muted-foreground">{item.a}</dd>
+            </Reveal>
           ))}
-        </div>
+        </dl>
       </div>
     </section>
   )

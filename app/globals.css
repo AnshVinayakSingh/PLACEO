@@ -72,7 +72,7 @@
   --popover: oklch(0.175 0.007 55);
   --popover-foreground: oklch(0.955 0.012 85);
 
-  --primary: oklch(0.69 0.185 40);
+  --primary: oklch(0.7 0.15 42);
   --primary-foreground: oklch(0.16 0.01 50);
 
   --secondary: oklch(0.235 0.008 55);
@@ -81,22 +81,22 @@
   --muted: oklch(0.225 0.008 55);
   --muted-foreground: oklch(0.7 0.012 80);
 
-  --accent: oklch(0.69 0.185 40);
+  --accent: oklch(0.7 0.15 42);
   --accent-foreground: oklch(0.16 0.01 50);
 
   --destructive: oklch(0.62 0.22 25);
 
   --border: oklch(0.95 0.015 85 / 11%);
   --input: oklch(0.95 0.015 85 / 14%);
-  --ring: oklch(0.69 0.185 40);
+  --ring: oklch(0.7 0.15 42);
 
   --radius: 0.4rem;
 
   /* Legacy "brand" names kept so existing components inherit the new palette.
      purple -> brick, blue -> vermilion, cyan -> sand. */
-  --brand-purple: oklch(0.6 0.16 28);
-  --brand-blue: oklch(0.69 0.185 40);
-  --brand-cyan: oklch(0.83 0.09 85);
+  --brand-purple: oklch(0.62 0.11 35);
+  --brand-blue: oklch(0.7 0.15 42);
+  --brand-cyan: oklch(0.8 0.07 55);
 
   --ink-soft: oklch(0.58 0.012 80);
   --rule: oklch(0.95 0.015 85 / 9%);
@@ -118,6 +118,43 @@
   }
   h1, h2, h3 {
     text-wrap: balance;
+  }
+  p, li {
+    text-wrap: pretty;
+  }
+  /* numbers line up in data-heavy UI */
+  table, .tabular, [class*='tabular-nums'] {
+    font-variant-numeric: tabular-nums;
+  }
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+  /* fixed film grain: breaks digital flatness without touching layout */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    opacity: 0.035;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .skip-link {
+    position: fixed;
+    left: 1rem;
+    top: -4rem;
+    z-index: 100;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    padding: 0.6rem 1rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    transition: top 0.15s ease;
+  }
+  .skip-link:focus {
+    top: 1rem;
   }
   ::selection {
     background: var(--primary);
@@ -159,7 +196,7 @@
     transition: border-color 0.2s ease, background-color 0.2s ease;
   }
   .glass-hover:hover {
-    border-color: oklch(0.69 0.185 40 / 45%);
+    border-color: oklch(0.7 0.15 42 / 45%);
     background: oklch(0.21 0.009 55);
   }
 
@@ -171,7 +208,7 @@
   }
   a.brand-gradient:hover,
   button.brand-gradient:hover:not(:disabled) {
-    background-color: oklch(0.74 0.18 42);
+    background-color: oklch(0.75 0.15 44);
   }
   a.brand-gradient:active,
   button.brand-gradient:active:not(:disabled) {
@@ -201,9 +238,8 @@
 
   .eyebrow {
     font-family: var(--font-mono);
-    font-size: 0.7rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
+    font-size: 0.78rem;
+    letter-spacing: 0.01em;
     color: var(--ink-soft);
   }
   .rule-top {

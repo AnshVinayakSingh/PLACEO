@@ -190,13 +190,13 @@ export default function SignupPage() {
               className="mt-0.5 size-4 rounded border-border accent-[var(--primary)]"
             />
             I agree to the{' '}
-            <Link href="#" className="text-brand-cyan hover:underline">
+            <span className="text-brand-cyan hover:underline">
               Terms of Service
-            </Link>{' '}
+            </span>{' '}
             and{' '}
-            <Link href="#" className="text-brand-cyan hover:underline">
+            <span className="text-brand-cyan hover:underline">
               Privacy Policy
-            </Link>
+            </span>
           </label>
           {errors.agree && <p className="mt-1.5 text-xs text-destructive">{errors.agree}</p>}
         </div>
